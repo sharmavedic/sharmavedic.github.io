@@ -1,0 +1,1528 @@
+/* ===== Design tokens ===== */
+:root {
+  --bg: #fafafa;
+  --bg-alt: #ffffff;
+  --bg-raised: #ffffff;
+  --text: #16171a;
+  --text-muted: #55575e;
+  --border: #e6e6ea;
+  --primary: #4338ca;
+  --primary-hover: #3730a3;
+  --primary-tint: #eeecfd;
+  --accent: #f59e0b;
+  --accent-tint: #fef3e0;
+  --shadow: 0 1px 2px rgba(16, 17, 25, 0.04), 0 8px 24px rgba(16, 17, 25, 0.06);
+  --shadow-hover: 0 4px 10px rgba(16, 17, 25, 0.06), 0 16px 36px rgba(16, 17, 25, 0.10);
+  --radius: 14px;
+  /* Page measure: how wide the content runs before the background margins
+     start. Lower = more empty space at the left and right edges. */
+  --max-width: 1280px;
+  /* Left and right padding inside the pasture card — the knob for breathing
+     room at its sides. Raising it WIDENS the card; the drawing inside stays
+     at its natural 400px either way. */
+  --commons-pad: 22px;
+  /* Width of the control rail (slider + buttons) beside the pasture. */
+  --commons-rail: 74px;
+  /* Derived: drawing + rail + gap + padding + the card's 1px border either
+     side, so the card is always exactly as wide as what it holds. */
+  --commons-card: calc(400px + var(--commons-rail) + 10px + 2 * var(--commons-pad) + 2px);
+  /* The column it sits in: the card plus 33px of slack either side, which is
+     what lets it centre. */
+  --commons-col: calc(var(--commons-card) + 66px);
+  /* Project 01's card, built the same way: drawing + padding + border. */
+  /* Project 02's card holds a 480px-wide drawing: one 228px pasture beside its
+     label column, stacked twice, with the harvest chart under both. 480 is the
+     width of Project 01's box on purpose, so the two cards match. */
+  --norms-pad: 22px;
+  --norms-card: calc(480px + 2 * var(--norms-pad) + 2px);
+  --norms-col: calc(var(--norms-card) + 66px);
+  --shepherds-pad: 22px;
+  --shepherds-card: calc(480px + 2 * var(--shepherds-pad) + 2px);
+  --shepherds-col: calc(var(--shepherds-card) + 66px);
+  /* Project 03's card: three 220px-wide pastures side by side (720px total)
+     plus the harvest chart under all three. Stands alone at the bottom of its
+     section rather than beside prose, so it doesn't need to match another
+     card's width the way the pairs above do. */
+  --dynamics-pad: 20px;
+  --dynamics-card: calc(720px + 2 * var(--dynamics-pad) + 2px);
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  /* Pasture palette: bare (grazed-out) -> lush grass */
+  --grass-bare: #ffffff;
+  --grass-full: #15803d;
+  --pasture-line: #d8dad8;
+  /* Herd-size options 1-4, used for both the shepherds' cloaks and the chart
+     bars. Validated as a categorical palette against the light surface. */
+  --opt-1: #6366f1;
+  --opt-2: #14b8a6;
+  --opt-3: #e0a021;
+  --opt-4: #e05a8a;
+  /* Project 02's two norms: validated as a categorical pair against both
+     surfaces, so unlike --opt-2/3 they need no dark-mode step. */
+  --norm-fixed: #e05a8a;
+  --norm-adaptive: #6366f1;
+}
+
+:root[data-theme="dark"] {
+  --bg: #101014;
+  --bg-alt: #17171d;
+  --bg-raised: #1c1c24;
+  --text: #ececef;
+  --text-muted: #a5a6b0;
+  --border: #2a2a33;
+  --primary: #8b7ffb;
+  --primary-hover: #a294ff;
+  --primary-tint: #232042;
+  --accent: #fbbf24;
+  --accent-tint: #2b2312;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-hover: 0 4px 10px rgba(0, 0, 0, 0.35), 0 16px 36px rgba(0, 0, 0, 0.45);
+  /* Dark mode runs bare earth -> green instead of white -> green: a pasture
+     of near-white tiles glares against a dark card. */
+  --grass-bare: #38352e;
+  --grass-full: #2f9457;
+  --pasture-line: #3a3f3a;
+  /* Teal and amber sit above the dark-mode lightness band, so both step down. */
+  --opt-1: #6366f1;
+  --opt-2: #0d9488;
+  --opt-3: #c2860f;
+  --opt-4: #e05a8a;
+  /* Project 02's two norms: validated as a categorical pair against both
+     surfaces, so unlike --opt-2/3 they need no dark-mode step. */
+  --norm-fixed: #e05a8a;
+  --norm-adaptive: #6366f1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101014;
+    --bg-alt: #17171d;
+    --bg-raised: #1c1c24;
+    --text: #ececef;
+    --text-muted: #a5a6b0;
+    --border: #2a2a33;
+    --primary: #8b7ffb;
+    --primary-hover: #a294ff;
+    --primary-tint: #232042;
+    --accent: #fbbf24;
+    --accent-tint: #2b2312;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-hover: 0 4px 10px rgba(0, 0, 0, 0.35), 0 16px 36px rgba(0, 0, 0, 0.45);
+    /* Dark mode runs bare earth -> green instead of white -> green: a pasture
+       of near-white tiles glares against a dark card. */
+    --grass-bare: #38352e;
+    --grass-full: #2f9457;
+    --pasture-line: #3a3f3a;
+    /* Teal and amber sit above the dark-mode lightness band, so both step down. */
+    --opt-1: #6366f1;
+    --opt-2: #0d9488;
+    --opt-3: #c2860f;
+    --opt-4: #e05a8a;
+    /* Project 02's two norms: validated as a categorical pair against both
+       surfaces, so unlike --opt-2/3 they need no dark-mode step. */
+    --norm-fixed: #e05a8a;
+    --norm-adaptive: #6366f1;
+  }
+}
+
+/* ===== Reset ===== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.25s ease, color 0.25s ease;
+  overflow-x: hidden;
+}
+
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+
+.wrap {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ===== Header / Nav ===== */
+header.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+nav.nav {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.brand span { color: var(--primary); }
+
+.nav-links {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.nav-links a {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.nav-links a:hover { color: var(--text); background: var(--bg-alt); }
+
+.nav-links a.active {
+  color: var(--primary);
+  background: var(--primary-tint);
+}
+
+.theme-toggle {
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-left: 8px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.theme-toggle:hover { transform: scale(1.08); background: var(--primary-tint); }
+
+.nav-toggle {
+  display: none;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 720px) {
+  .nav-toggle { display: block; }
+  .nav-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px 16px 18px;
+    gap: 2px;
+    display: none;
+  }
+  .nav-links.open { display: flex; }
+  .nav-links a { padding: 12px 14px; }
+}
+
+/* ===== Hero ===== */
+.hero {
+  padding: 84px 0 56px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+@media (max-width: 720px) {
+  .hero { grid-template-columns: 1fr; padding: 48px 0 32px; text-align: center; }
+  .hero-photo { order: -1; margin: 0 auto; }
+}
+
+.eyebrow {
+  display: block;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin-bottom: 14px;
+}
+
+.hero h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 18px;
+  text-wrap: balance;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--primary);
+}
+
+.hero p.lead {
+  font-size: 1.12rem;
+  color: var(--text-muted);
+  max-width: 54ch;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 720px) {
+  .hero p.lead { margin-left: auto; margin-right: auto; }
+}
+
+.btn-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 720px) { .btn-row { justify-content: center; } }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+.btn-primary:hover { background: var(--primary-hover); box-shadow: var(--shadow-hover); }
+
+.btn-ghost {
+  background: var(--bg-alt);
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-ghost:hover { box-shadow: var(--shadow); border-color: var(--primary); }
+
+.hero-photo {
+  justify-self: center;
+  width: 240px;
+  height: 240px;
+  border-radius: 28px;
+  background: linear-gradient(150deg, var(--primary-tint), var(--accent-tint));
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 4rem;
+  color: var(--primary);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.hero-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ===== Sections ===== */
+main { padding-bottom: 80px; }
+
+section.block { padding: 56px 0; }
+section.block + section.block { border-top: 1px solid var(--border); }
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+.section-head { margin-bottom: 32px; }
+
+.kicker {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.section-head h2,
+.problem-layout > h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.section-head p { color: var(--text-muted); margin-top: 10px; max-width: 60ch; }
+
+/* Sub-headings within a section's prose. */
+.section-head h3 {
+  font-family: var(--font-serif);
+  font-size: 1.12rem;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 24px 0 0;
+}
+
+.section-head h3 + p { margin-top: 6px; }
+
+/* ===== Cards ===== */
+.card-grid { display: grid; gap: 18px; }
+
+.card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+
+.card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.card h3 { font-size: 1.12rem; font-weight: 700; }
+.card .org { color: var(--primary); font-weight: 600; font-size: 0.95rem; }
+.card .dates {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  padding: 3px 11px;
+  border-radius: 999px;
+}
+
+.card p, .card ul { color: var(--text-muted); font-size: 0.95rem; }
+.card ul { margin-top: 10px; padding-left: 20px; }
+.card li { margin-bottom: 6px; }
+.card p.tagline { font-style: italic; margin-bottom: 8px; color: var(--text-muted); }
+
+/* ===== Highlight box (research questions) ===== */
+.highlight-box {
+  background: var(--primary-tint);
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border));
+  border-radius: var(--radius);
+  padding: 26px 28px;
+  margin-top: 18px;
+}
+.highlight-box h4 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); margin-bottom: 14px; }
+.highlight-box ul { list-style: none; display: grid; gap: 10px; }
+.highlight-box li { padding-left: 28px; position: relative; }
+.highlight-box li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* ===== Stats row ===== */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-top: 36px;
+}
+.stat {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+.stat .num { font-family: var(--font-serif); font-size: 1.7rem; color: var(--primary); }
+.stat .label { font-size: 0.82rem; color: var(--text-muted); margin-top: 2px; }
+
+/* ===== Timeline (education) ===== */
+.timeline { position: relative; padding-left: 28px; display: grid; gap: 26px; }
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--border);
+}
+.timeline .card { position: relative; }
+.timeline .card::before {
+  content: "";
+  position: absolute;
+  left: -28px;
+  top: 30px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+/* ===== Table (teaching) ===== */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+table.teach {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 620px;
+  background: var(--bg-raised);
+}
+table.teach th, table.teach td {
+  text-align: left;
+  padding: 14px 18px;
+  font-size: 0.92rem;
+  border-bottom: 1px solid var(--border);
+}
+table.teach th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background: var(--bg-alt);
+}
+table.teach tr:last-child td { border-bottom: none; }
+table.teach tbody tr { transition: background 0.15s ease; }
+table.teach tbody tr:hover { background: var(--primary-tint); }
+table.teach td.course { font-weight: 600; }
+table.teach td.code { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+table.teach td.hours { color: var(--primary); font-weight: 600; white-space: nowrap; }
+
+/* ===== Contact ===== */
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+  margin-top: 8px;
+}
+.contact-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.contact-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+.contact-card .icon {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--primary-tint);
+  color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  margin: 0 auto 14px;
+}
+.contact-card h3 { font-size: 1rem; margin-bottom: 6px; }
+.contact-card a.value { color: var(--primary); font-weight: 600; word-break: break-word; }
+
+/* ===== Footer ===== */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ===== Problem section: the text with the pasture running alongside it ===== */
+/* Two rows, so the kicker sits on its own line above both columns' content
+   and the card's top edge starts level with the h2 rather than with the
+   kicker. Nothing here depends on the heading's measured height. */
+.problem-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--commons-col);
+  /* The card spans rows 2-3. If both were auto, its height would be split
+     between them and any change in the card would shove the prose up or
+     down; making the last row flexible keeps the card out of row 2's sizing
+     (same fix as .project-layout, below). */
+  grid-template-rows: auto auto 1fr;
+  column-gap: 56px;
+  align-items: start;
+}
+
+.problem-layout > .kicker { grid-column: 1; grid-row: 1; }
+.problem-layout > h2 { grid-column: 1; grid-row: 2; }
+.problem-layout > .section-head { grid-column: 1; grid-row: 3; }
+/* The card starts level with the heading rather than the body text, and
+   drops a few pixels (see margin-top below) so its top edge sits just under
+   the cap-line — matching Project 01 and Project 02's cards. */
+.problem-layout > .commons-visual { grid-column: 2; grid-row: 2 / span 2; }
+
+.commons-visual-title {
+  font-family: var(--font-serif);
+  font-size: 1.12rem;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  text-align: center;
+  margin: 0 0 2px;
+}
+
+.commons-visual-tagline {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.problem-layout > h2 { margin-bottom: 10px; }
+.problem-layout > .section-head > p:first-child { margin-top: 0; }
+
+.problem-layout .section-head { margin-bottom: 0; }
+/* Capped so the card stays trimmed to its contents once the layout stacks. */
+.problem-layout .commons-visual {
+  margin-top: 12px;
+  width: 100%;
+  max-width: var(--commons-card);
+  margin-inline: auto;
+}
+
+@media (max-width: 900px) {
+  /* minmax(0, 1fr) + min-width: 0 because a plain 1fr track refuses to go
+     below its content's min-content width, which is what let the card push
+     the whole page sideways on a phone. */
+  .problem-layout { grid-template-columns: minmax(0, 1fr); }
+  /* Each child has to be named: the base rules target `.problem-layout > .kicker`
+     and friends at specificity 0,2,0, so a `> *` reset never beat them and
+     the card kept `grid-column: 2`, which quietly created an implicit second
+     column and left the prose in a sliver. */
+  .problem-layout > .kicker,
+  .problem-layout > h2,
+  .problem-layout > .section-head,
+  .problem-layout > .commons-visual { grid-column: 1; grid-row: auto; min-width: 0; }
+  .problem-layout .section-head { margin-bottom: 32px; }
+}
+
+/* ===== Commons visual (home) ===== */
+/* Everything inside keeps its normal size; the card is small because it is
+   trimmed to its contents, not because the contents were scaled down. */
+.commons-visual {
+  position: relative;
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px var(--commons-pad) 14px;
+}
+
+.commons-visual .commons-readout { margin: 12px 0 0; }
+
+.commons-visual:hover { transform: none; }
+
+.commons-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 22px;
+}
+
+
+.commons-slider-track-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.commons-tick {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 3px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 2px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.commons-tick-label {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.commons-slider-end {
+  font-size: 0.74rem;
+  line-height: 1.3;
+  color: var(--text-muted);
+  text-align: center;
+  width: 68px;
+  flex-shrink: 0;
+}
+
+.commons-slider {
+  flex: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--text-muted), var(--primary));
+  outline: none;
+  cursor: pointer;
+}
+
+.commons-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  border: 3px solid var(--primary);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.commons-slider::-webkit-slider-thumb:hover { transform: scale(1.12); }
+
+.commons-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  border: 3px solid var(--primary);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.commons-slider::-moz-range-track { height: 6px; border-radius: 999px; background: transparent; }
+
+.commons-slider:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.commons-readout {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* The pasture and its control rail, side by side. */
+.commons-stage {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+/* ===== Help popups, shared by both cards ===== */
+/* Question mark in a card's top-right corner, and the popup it opens. */
+.sim-help-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  font: 600 0.78rem/1 var(--font-sans);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.sim-help-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* A modal dialog, so it opens over the page rather than inside the card. */
+.sim-help {
+  /* The global reset zeroes every margin, which also removes the auto margins
+     a modal dialog centres itself with. */
+  margin: auto;
+  width: min(580px, calc(100vw - 32px));
+  max-height: min(80vh, 760px);
+  overflow-y: auto;
+  padding: 26px 30px 30px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-hover);
+}
+
+.sim-help::backdrop {
+  background: rgba(8, 8, 12, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.sim-help h3 {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
+  margin-bottom: 14px;
+  padding-right: 28px;
+}
+
+.sim-help h4 {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--primary);
+  margin: 20px 0 6px;
+}
+
+.sim-help p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.sim-help p + p { margin-top: 10px; }
+.sim-help b { color: var(--text); font-variant-numeric: tabular-nums; }
+.sim-help sup { font-size: 0.78em; }
+
+.sim-help pre {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  color: var(--text);
+}
+
+.sim-help-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.sim-help-close:hover { color: var(--text); border-color: var(--primary); }
+
+/* Holds the pasture and the buttons that sit over it. */
+.commons-canvas {
+  width: 400px;
+  max-width: 100%;
+  flex: 0 1 auto;
+  min-width: 0;
+  /* Positions inside the 400x324 viewBox: the grid runs x 104-380, y 32-308,
+     so its centre is (242, 170) and its right-hand corners sit at x 358. */
+  --play-x: 60.5%;
+  --play-y: 52.47%;
+  --corner-x: 89.5%;
+  --ff-y: 16.67%;
+  --restart-y: 88.27%;
+}
+
+.commons-svg {
+  /* Fixed at its natural size, and flex: none, so extra padding or a wider
+     card never squeezes it. max-width still lets it shrink on a phone. */
+  width: 400px;
+  max-width: 100%;
+  flex: none;
+  height: auto;
+  display: block;
+}
+
+/* ===== Simulation controls, shared by both cards ===== */
+/* Buttons float over a .sim-canvas and are positioned by custom properties, so
+   each card can aim them at whatever part of its own drawing they belong to. */
+.sim-canvas { position: relative; }
+
+.sim-play-btn,
+.sim-restart-btn,
+.sim-ff-btn {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+  /* Translucent, but opaque enough to read over a bare white tile as well as
+     over lush green. */
+  background: color-mix(in srgb, var(--bg-raised) 72%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--text) 14%, transparent);
+  backdrop-filter: blur(2px);
+  color: var(--text);
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+}
+
+.sim-play-btn:hover,
+.sim-restart-btn:hover,
+.sim-ff-btn:hover {
+  background: color-mix(in srgb, var(--bg-raised) 92%, transparent);
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.sim-play-btn {
+  left: var(--play-x, 50%);
+  top: var(--play-y, 50%);
+  width: 74px;
+  height: 74px;
+  font-size: 1.6rem;
+}
+
+/* Play and restart invite a click, so they stay visible. Pause would only sit
+   in the way, so it fades in when the pointer is over the pasture. */
+.sim-play-btn[data-state="play"] { padding-left: 5px; }
+.sim-play-btn[data-state="pause"] { opacity: 0; font-size: 1.2rem; }
+.sim-canvas:hover .sim-play-btn[data-state="pause"],
+.sim-play-btn[data-state="pause"]:focus-visible { opacity: 1; }
+
+.sim-restart-btn,
+.sim-ff-btn {
+  left: var(--corner-x, 90%);       /* both hug the drawing's right-hand edge */
+  width: 34px;
+  height: 34px;
+  font-size: 1.05rem;
+}
+
+.sim-restart-btn { top: var(--restart-y, 88%); }
+.sim-restart-btn[hidden] { display: none; }
+
+/* Unlike restart, fast forward is available in any state, so it only shows
+   while the pointer is over the drawing. */
+.sim-ff-btn {
+  top: var(--ff-y, 16%);
+  opacity: 0;
+  font-size: 1.15rem;
+  padding-bottom: 2px;
+}
+
+.sim-ff-btn[data-speed]:not([data-speed="1"]) {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding-bottom: 0;
+}
+
+.sim-canvas:hover .sim-ff-btn,
+.sim-ff-btn:focus-visible { opacity: 1; }
+
+.commons-rail {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: var(--commons-rail);
+  flex-shrink: 0;
+  /* The drawing's midline is y=162 but the grid's is y=170, so padding the top
+     by twice that difference re-centres the slider on the grid. */
+  padding-top: 16px;
+}
+
+.commons-rail-end {
+  font-size: 0.7rem;
+  line-height: 1.25;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Vertical slider, by rotating the horizontal one: it keeps the custom track
+   and thumb styling, which the native vertical appearance discards. The 90deg
+   track gradient becomes bottom-to-top, so muted sits at 1 cow and the primary
+   colour at 4. */
+.commons-rail .commons-slider-track-wrap {
+  flex: none;
+  width: 26px;
+  height: 180px;
+}
+
+/* Taken out of flow: a rotated element keeps its unrotated layout box, so
+   left in flow its 180px width would drive the rail wide and squeeze the
+   pasture next to it. */
+.commons-rail .commons-slider {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  flex: none;
+  width: 180px;
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+/* Grass changes a level at a time; ease the colour so it reads as grazing
+   rather than as tiles blinking. */
+.commons-pasture rect { transition: fill 0.3s ease; }
+.commons-cow-head { transition: transform 0.18s ease; }
+
+/* A starved cow fades off the pasture before its node is dropped. */
+.commons-cow { transition: opacity 0.5s ease; }
+.commons-cow-gone { opacity: 0; }
+
+.commons-stats {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.commons-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.commons-stat-num {
+  font-family: var(--font-serif);
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.commons-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 12ch;
+  margin-top: 2px;
+}
+
+.commons-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.commons-controls .btn-chip { margin-top: 0; }
+
+.commons-caption {
+  margin-top: 14px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-align: center;
+  min-height: 1.4em;
+  max-width: 46ch;
+}
+
+/* Project 01, laid out like the problem section: kicker on its own row, then
+   the heading, then the prose and the card side by side. */
+.project-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--shepherds-col);
+  /* The card spans rows 2-3. If both were auto, its height would be split
+     between them and any change in the card would shove the prose up or down;
+     making the last row flexible keeps the card out of row 2's sizing. */
+  grid-template-rows: auto auto 1fr;
+  column-gap: 56px;
+  align-items: start;
+}
+
+.project-layout > .kicker { grid-column: 1; grid-row: 1; }
+.project-layout > h2 { grid-column: 1; grid-row: 2; margin-bottom: 10px; }
+.project-layout > .section-head { grid-column: 1; grid-row: 3; }
+
+/* The card starts level with the heading rather than the body text, and drops
+   a few pixels so its top edge sits just under the cap-line. */
+.project-layout > .shepherds-visual {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  margin-top: 12px;
+}
+.project-layout > .section-head > p:first-child { margin-top: 0; }
+
+@media (max-width: 900px) {
+  .project-layout { grid-template-columns: minmax(0, 1fr); }
+  /* Each child has to be named: the base rules target `.project-layout > .kicker`
+     and friends at specificity 0,2,0, so a `> *` reset never beat them and
+     the card kept `grid-column: 2`, which quietly created an implicit second
+     column and left the prose in a sliver. */
+  .project-layout > .kicker,
+  .project-layout > h2,
+  .project-layout > .section-head,
+  .project-layout > .shepherds-visual { grid-column: 1; grid-row: auto; min-width: 0; }
+  .project-layout .section-head { margin-bottom: 32px; }
+}
+
+/* ===== Shepherds visual (project 1) ===== */
+.shepherds-visual {
+  position: relative;
+  margin-top: 0;
+  width: 100%;
+  max-width: var(--shepherds-card);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px var(--shepherds-pad) 16px;
+}
+
+.shepherds-visual-title {
+  font-family: var(--font-serif);
+  font-size: 1.12rem;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  text-align: center;
+  margin: 0 0 2px;
+}
+
+.shepherds-visual-tagline {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+/* The box, with the play, restart and fast-forward buttons over it. */
+.shepherds-canvas {
+  width: 480px;
+  max-width: 100%;
+  --play-x: 50%;
+  --play-y: 50%;
+  --corner-x: 92%;
+  --ff-y: 12%;
+  --restart-y: 88%;
+}
+
+.shepherds-visual:hover { transform: none; }
+
+.shepherds-svg {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  display: block;
+}
+
+.shepherds-link {
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-dasharray: 3 4;
+}
+
+/* Halo round the two who are talking, so the pair is obvious in a moving crowd. */
+.shepherds-ring {
+  fill: color-mix(in srgb, var(--primary) 12%, transparent);
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+
+.shepherds-chart {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  display: block;
+  margin-top: 4px;
+}
+
+.shepherds-progress {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.shepherds-modes {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.shepherds-modes .btn-chip { margin-top: 0; }
+
+.shepherds-modes .btn-chip[aria-pressed="true"] {
+  background: var(--primary-tint);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.shepherds-readout {
+  /* Held at the height of the longest of the two population blurbs, so
+     switching between them cannot resize the card. */
+  min-height: 4.2em;
+  margin-top: 12px;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 52ch;
+}
+
+/* ===== Gossip visual (project 1) ===== */
+.gossip-visual {
+  margin-top: 30px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 26px 26px;
+}
+
+.gossip-visual:hover { transform: none; }
+
+.gossip-options {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.gossip-legend-line {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.gossip-legend-line + .gossip-legend-line { margin-top: 8px; }
+
+.gossip-stats {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.gossip-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gossip-stat-num {
+  font-family: var(--font-serif);
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.gossip-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 12ch;
+  margin-top: 2px;
+}
+
+.gossip-svg {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  display: block;
+}
+
+.gossip-legend {
+  display: inline-flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 12px;
+  background: var(--primary-tint);
+  padding: 8px 18px;
+  border-radius: 999px;
+}
+
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.gossip-node-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gossipNodePulse 0.4s ease;
+}
+@keyframes gossipNodePulse {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.legend-chip.is-optimal { color: var(--text); font-weight: 600; }
+
+.btn-chip {
+  margin-top: 16px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+.btn-chip:hover { border-color: var(--primary); color: var(--text); }
+.btn-chip:disabled { opacity: 0.45; cursor: default; border-color: var(--border); color: var(--text-muted); }
+
+.gossip-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.gossip-controls .btn-chip { margin-top: 0; }
+
+/* ===== Reveal-on-scroll ===== */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.in { opacity: 1; transform: translateY(0); }
+
+
+/* ===== Project 02: two norms, one weather ===== */
+/* Same three-row grid as the other two sections: kicker, heading, then prose
+   beside the card. */
+.project2-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--norms-col);
+  grid-template-rows: auto auto 1fr;
+  column-gap: 40px;
+  align-items: start;
+}
+
+.project2-layout > .kicker { grid-column: 1; grid-row: 1; }
+.project2-layout > h2 { grid-column: 1; grid-row: 2; margin-bottom: 10px; }
+.project2-layout > .section-head { grid-column: 1; grid-row: 3; }
+.project2-layout > .section-head > p:first-child { margin-top: 0; }
+
+/* The card is aligned to the heading and nudged down, matching Project 01.
+   The third row must stay 1fr: with all-auto rows a spanning item's height is
+   split across the rows it spans, which drags the prose around whenever the
+   card grows. */
+.project2-layout > .leader-steps {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .project2-layout { grid-template-columns: minmax(0, 1fr); }
+  /* Each child has to be named: the base rules target `.project2-layout > .kicker`
+     and friends at specificity 0,2,0, so a `> *` reset never beat them and
+     the card kept `grid-column: 2`, which quietly created an implicit second
+     column and left the prose in a sliver. */
+  .project2-layout > .kicker,
+  .project2-layout > h2,
+  .project2-layout > .section-head,
+  .project2-layout > .leader-steps { grid-column: 1; grid-row: auto; min-width: 0; }
+  .project2-layout .section-head { margin-bottom: 32px; }
+  .project2-layout > .leader-steps { margin-top: 0; }
+}
+
+/* ===== Leader-emergence steps (project 2, experimental) ===== */
+.leader-steps {
+  position: relative;
+  width: 100%;
+  max-width: var(--norms-card);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px var(--norms-pad);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.leader-step {
+  width: 100%;
+  max-width: 220px;
+  padding: 22px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.leader-step + .leader-step { border-top: 1px solid var(--border); }
+
+.leader-step-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.leader-step svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.leader-step-caption {
+  margin: 0 0 14px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+  /* An explicit `width` (not max-width) deliberately overflows the 220px
+     `.leader-step` column that clamps the svg below it: `.leader-step`'s
+     align-items: center means a child sizes to fit-content, whose "available
+     space" term is the 220px column — so max-width alone gets clamped to
+     that no matter how large, and the caption wraps tighter than it needs
+     to. Scales down toward the 220px floor on narrow screens so it never
+     overflows `.leader-steps` itself. */
+  width: clamp(220px, 60vw, 250px);
+}
+
+
+.norms-visual {
+  position: relative;
+  margin-top: 0;
+  width: 100%;
+  max-width: var(--norms-card);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px var(--norms-pad) 16px;
+}
+
+.norms-visual:hover { transform: none; }
+
+/* Play sits over the pastures rather than the whole drawing, since the chart
+   fills the lower third. Both corner buttons clear the panel readouts. */
+.norms-canvas {
+  width: 480px;
+  max-width: 100%;
+  /* Play straddles the gap between the stacked pastures, so it plainly drives
+     both. Fast forward and restart take the far corners of the pair. */
+  --play-x: 73.3%;
+  --play-y: 41.9%;
+  --corner-x: 93.3%;
+  --ff-y: 9.1%;
+  --restart-y: 74.6%;
+}
+
+.norms-svg {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  display: block;
+}
+
+/* Tiles fade between grass levels; they are created with their colour already
+   set so the first paint does not animate up from black. */
+.norms-pasture rect { transition: fill 0.3s ease; }
+
+.norms-weather rect,
+.norms-weather text { transition: fill 0.25s ease, stroke 0.25s ease, opacity 0.25s ease; }
+
+/* "?" keeps the shared rule's card-corner position, as on the pasture card. */
+.norms-verdict {
+  width: 100%;
+  margin: 0;
+  /* Held at two lines, the length of the finished verdict, so the card is the
+     same height before and after a run. */
+  min-height: 2.8em;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ===== Project 03: three-pasture dynamics ===== */
+.dynamics-visual {
+  position: relative;
+  margin-top: 30px;
+  width: 100%;
+  max-width: var(--dynamics-card);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px var(--dynamics-pad) 16px;
+}
+
+.dynamics-canvas {
+  width: 720px;
+  max-width: 100%;
+  flex: 0 1 auto;
+  min-width: 0;
+  /* Play/pause centres on the middle pasture; restart and fast-forward hug
+     the drawing's top-right and bottom-right corners, as on the other cards. */
+  --play-x: 50%;
+  --play-y: 28%;
+  --corner-x: 96%;
+  --ff-y: 4%;
+  --restart-y: 92%;
+}
+
+.dynamics-svg {
+  width: 720px;
+  max-width: 100%;
+  flex: none;
+  height: auto;
+  display: block;
+}
+
+.dynamics-pasture rect { transition: fill 0.3s ease; }
+
+.dynamics-verdict {
+  width: 100%;
+  margin: 10px 0 0;
+  min-height: 2.6em;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .dynamics-canvas, .dynamics-svg { width: 100%; }
+}

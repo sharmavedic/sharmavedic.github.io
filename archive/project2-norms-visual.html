@@ -1,0 +1,95 @@
+<!--
+  Project 02's original visual: the two-pastures-side-by-side simulation
+  (fixed norm vs. adaptive norm, same weather, same seed). Set aside on
+  2026-08-XX in favor of trying a new three-step "opinion leader" animation
+  concept instead. Not deleted — the backing code is untouched:
+
+    - js/norms.js       (scene: two pastures, weather strip, harvest chart)
+    - js/norms-sim.js    (model: seasons + fixed/adaptive norm driver)
+    - js/pasture-model.js (shared grazing model both pastures run)
+
+  Both norms.js and norms-sim.js guard on their DOM/scene existing
+  (`if (!svg) return;` / `if (!scene || !window.PastureModel) return;`), so
+  they no-op harmlessly with this markup absent from the page.
+
+  To restore: paste this back into index.html where the placeholder comment
+  says "Project 02 visual set aside — see archive/project2-norms-visual.html",
+  and add back these three script tags before </body> (pasture-model.js is
+  norms-sim.js's only consumer, so it was pulled too):
+    <script src="js/pasture-model.js"></script>
+    <script src="js/norms.js"></script>
+    <script src="js/norms-sim.js"></script>
+-->
+
+<div class="norms-visual card">
+  <button class="sim-help-btn" id="normsHelpBtn" type="button"
+          aria-label="How the simulation works">?</button>
+
+  <div class="norms-canvas sim-canvas">
+    <svg class="norms-svg" viewBox="0 0 480 700" role="img" aria-labelledby="normsTitle normsDesc">
+      <title id="normsTitle">Two pastures, two norms, the same weather</title>
+      <desc id="normsDesc">Two six-by-six pastures run side by side through an identical sequence of drought, dry, fair and wet seasons. On the left every shepherd keeps two cows whatever the season; on the right they turn out one, two, three or four cows according to the season. A chart below tracks the cumulative grass eaten on each side, and the adaptive rule pulls steadily ahead.</desc>
+    </svg>
+
+    <button class="sim-play-btn" id="normsOverlayPlay" type="button"
+            data-state="play" aria-label="Play both simulations">&#9654;</button>
+    <button class="sim-ff-btn" id="normsFf" type="button" aria-label="Fast forward">&raquo;</button>
+    <button class="sim-restart-btn" id="normsRestart" type="button"
+            aria-label="Run both simulations again">&#8634;</button>
+  </div>
+
+  <p class="norms-verdict" id="normsVerdict" aria-live="polite"></p>
+</div>
+
+<dialog class="sim-help" id="normsHelp" aria-labelledby="normsHelpTitle">
+  <button class="sim-help-close" id="normsHelpClose" type="button" aria-label="Close">&times;</button>
+  <h3 id="normsHelpTitle">How the simulation works</h3>
+
+  <p>
+    Both pastures use exactly the grazing model from <em>The Problem</em> above &mdash; the
+    same cows, the same eat-or-move rule, the same neighbour-seeded regrowth. They start from
+    the same grass, run on the same random seed, and get the same weather. The only thing
+    that differs is the norm.
+  </p>
+
+  <h4>The state</h4>
+  <p>
+    The weather takes one of four states &mdash; <b data-derived="seasons"></b> &mdash; drawn
+    fresh every <b data-cfg="seasonLength"></b> steps (about
+    <b data-derived="seasonSeconds"></b>&thinsp;s at normal speed), each equally likely and
+    independent of everything else. The season multiplies how fast grass grows back, by
+    <b data-cfg="seasonScale"></b> respectively. Nothing else about the pasture changes.
+  </p>
+
+  <h4>The two norms</h4>
+  <p>
+    A norm maps the state to an action: how many cows each of the four shepherds turns out.
+    The <b>fixed norm</b> answers <b data-cfg="fixedCows"></b> in every state. The
+    <b>adaptive norm</b> answers <b data-cfg="adaptiveCows"></b> across the four seasons.
+    Shepherds re-decide only at a season boundary; destocking sheds the weakest animals
+    first.
+  </p>
+
+  <h4>Why those numbers</h4>
+  <p>
+    Holding each season fixed and sweeping herd sizes gives a clean optimum per season &mdash;
+    one cow in drought, two in dry, three in fair, four in wet &mdash; and overstocking costs
+    far more than understocking. Sweeping all 256 possible season-to-herd maps confirms this
+    one is the best of them.
+  </p>
+
+  <h4>What is being counted</h4>
+  <p>
+    The chart tracks cumulative grass eaten. A cow eats almost exactly what it burns
+    (<b data-derived="bitesPerStep"></b> of a grass level per step), so this number is really
+    <em>cow-steps sustained</em> &mdash; how much grazing the pasture actually supported. It
+    rewards keeping animals alive and fed, not merely owning them.
+  </p>
+
+  <h4>The controls</h4>
+  <p>
+    Play and pause sit over the pastures, fast forward in the top-right corner and restart
+    in the lower-right; both appear on hover. Restarting deals fresh weather and leaves the
+    run paused. A run lasts <b data-cfg="horizon"></b> steps and then stops on its verdict.
+  </p>
+</dialog>

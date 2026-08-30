@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vedic Sharma — PhD Researcher, University of Toronto</title>
+<meta name="description" content="Vedic Sharma is a PhD candidate in Computer Science at the University of Toronto, researching Multi-Agent Reinforcement Learning under Prof. Peter Marbach." />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a class="brand" href="index.html">Vedic <span>Sharma</span></a>
+    <button class="nav-toggle" aria-label="Toggle menu">☰</button>
+    <div class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="education.html">Education</a>
+      <a href="experience.html">Experience</a>
+      <a href="teaching.html">Teaching</a>
+      <a href="contact.html">Contact</a>
+      <button class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">PhD Candidate · University of Toronto</div>
+        <h1>Vedic Sharma builds theory for <em>multi-agent</em> systems that learn to cooperate.</h1>
+        <p class="lead">
+          I'm a Computer Science PhD candidate at the University of Toronto, supervised by
+          Prof. Peter Marbach. My research sits at the intersection of reinforcement learning,
+          economics, and sociology. I am building theoretical foundations for multi-agent systems
+          that emulate human-like decision-making and collaboration.
+        </p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="#problem">View Research</a>
+          <a class="btn btn-ghost" href="contact.html">Get in Touch</a>
+        </div>
+      </div>
+      <div class="hero-photo">
+        <!-- Replace with <img src="assets/headshot.jpg" alt="Vedic Sharma" /> once you have a photo -->
+        VS
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <section class="block reveal problem-layout" id="problem">
+      <div class="kicker">The Problem</div>
+      <h2>A tragedy of the commons</h2>
+      <div class="section-head">
+        <p>
+          In 1968, Garrett Hardin described a shared pasture where every herder, acting purely in
+          their own interest, adds one more animal to graze. Individual rationality ruins the collective
+          well-being as the pasture is overgrazed and the resource collapses for everyone.
+        </p>
+
+        <h3>How real communities avoid it</h3>
+        <p>
+          Real-life communities regularly avoid this fate. Political economist Elinor Ostrom showed
+          that, left to self-govern, groups sharing a resource develop mechanisms like local
+          monitoring and graduated social consequences — no privatization or central authority
+          required. I ask: can the same kind of self-governance be
+          built into artificial agents, purely through how we shape their incentives?
+        </p>
+
+        <h3>Building it into agents</h3>
+        <p>
+          My work introduces an additional reward mechanism called <strong>social reward</strong>. This,
+          alongside personal utility, lets a group of self-interested
+          agents organically produce a <strong>leader</strong>, which steers the collective behavior
+          toward socially optimal outcomes, avoiding the tragedy.
+        </p>
+      </div>
+
+      <div class="commons-visual card">
+        <button class="sim-help-btn" id="commonsHelpBtn" type="button"
+                aria-label="How the simulation works">?</button>
+        <h3 class="commons-visual-title">Shepherds grazing cows</h3>
+        <p class="commons-visual-tagline">The pasture goes bare due to overgrazing</p>
+
+        <div class="commons-stats">
+          <div class="commons-stat">
+            <span class="commons-stat-num" id="commonsStep">0</span>
+            <span class="commons-stat-label">time steps</span>
+          </div>
+          <div class="commons-stat">
+            <span class="commons-stat-num" id="commonsGrass">100%</span>
+            <span class="commons-stat-label">grass left on the pasture</span>
+          </div>
+          <div class="commons-stat">
+            <span class="commons-stat-num" id="commonsAlive">16 / 16</span>
+            <span class="commons-stat-label">cows still alive</span>
+          </div>
+        </div>
+
+        <div class="commons-stage">
+          <div class="commons-canvas sim-canvas">
+          <svg class="commons-svg" viewBox="0 0 400 324" role="img" aria-labelledby="commonsTitle commonsDesc">
+            <title id="commonsTitle">A shared pasture grazed by four herds</title>
+            <desc id="commonsDesc">A six-by-six pasture of grass tiles on a six-step scale from bare to lush green. Four shepherds stand one to a side; their cows wander the pasture, eating a level of grass off whichever tile they stand on when their energy runs low, while each tile regrows only in proportion to how many of its neighbours still hold high grass. A cow whose energy reaches zero starves and is removed.</desc>
+          </svg>
+            <button class="sim-play-btn" id="commonsOverlayPlay" type="button"
+                    data-state="play" aria-label="Play the simulation">▶</button>
+            <button class="sim-ff-btn" id="commonsFf" type="button"
+                    aria-label="Fast forward">»</button>
+            <button class="sim-restart-btn" id="commonsRestart" type="button"
+                    aria-label="Restart the simulation">↺</button>
+          </div>
+
+          <div class="commons-rail">
+            <span class="commons-rail-end">4 cows<br />each</span>
+            <div class="commons-slider-track-wrap">
+              <input type="range" min="1" max="4" step="1" value="4" class="commons-slider"
+                     id="commonsHerd" aria-label="Cows per shepherd" />
+            </div>
+            <span class="commons-rail-end">1 cow<br />each</span>
+          </div>
+        </div>
+
+        <div class="commons-readout" id="commonsHerdReadout">4 cows per shepherd — 16 head grazing one shared pasture</div>
+      </div>
+
+      <dialog class="sim-help" id="commonsHelp" aria-labelledby="commonsHelpTitle">
+        <button class="sim-help-close" id="commonsHelpClose" type="button" aria-label="Close">×</button>
+        <h3 id="commonsHelpTitle">How the simulation works</h3>
+
+        <p>
+          Four shepherds share one 6&times;6 pasture. Every tile holds a grass level from 0 (bare)
+          to 5 (lush) &mdash; the six shades in the legend above the grid. Each shepherd owns
+          <b data-cfg="cowsPerShepherd"></b> cows, and every cow wears its shepherd's colour.
+          Cows are turned out on random tiles with <b data-cfg="energyStart"></b> energy.
+        </p>
+        <p>
+          With 3-4 cows each, the pasture eventually dies and no food remains for the herd &mdash;
+          the tragedy playing out in real time. With 1-2 cows, each shepherd can enjoy the pasture's
+          benefits indefinitely.
+        </p>
+
+        <h4>Every time step, each cow acts once</h4>
+        <p>
+          It either eats the tile it is standing on or walks to one of its neighbours (at most
+          four, fewer at the edges). The choice is a softmax over the value of the two actions:
+        </p>
+        <pre>f       = grass &divide; 5                 fertility, 0 to 1
+Q(eat)  = (1 &minus; energy) + <b data-cfg="grassWeight"></b> &times; f
+Q(move) = <b data-cfg="moveValue"></b>
+P(eat)  = 1 / (1 + e^((Q(move) &minus; Q(eat)) / <b data-cfg="temperature"></b>))</pre>
+        <p>
+          So a nearly empty cow eats almost whatever it is standing on, while a well-fed one walks
+          past all but the best grass. On a bare tile P(eat) is zero and the cow always moves.
+          Eating takes one level off the tile and returns <b data-cfg="energyPerBite"></b> energy.
+        </p>
+        <p>
+          When it moves, the direction is drawn with weight
+          e<sup>&thinsp;<b data-cfg="moveBias"></b>&thinsp;&times;&thinsp;f</sup> for each
+          neighbour, so greener ground pulls harder without ever being a sure thing. A cow only
+          ever sees the tiles it could step onto &mdash; nothing here knows the state of the
+          pasture as a whole.
+        </p>
+
+        <h4>Then, at the end of the step</h4>
+        <p>
+          Every cow spends <b data-cfg="energyDrain"></b> energy whatever it did, so each one needs
+          a mouthful roughly every <b data-derived="mealGap"></b> steps to break even. Coats pale as
+          energy runs down, and a cow that reaches zero has starved &mdash; it fades off the pasture
+          and is gone for good.
+        </p>
+        <p>
+          Each tile then regrows one level with probability <b data-cfg="regrowPerNeighbour"></b>
+          for every one of its eight neighbours still holding level <b data-cfg="highGrass"></b> or
+          above. That caps at <b data-derived="interior"></b> for an interior tile,
+          <b data-derived="edge"></b> along an edge and <b data-derived="corner"></b> in a corner,
+          which have fewer neighbours to seed them.
+        </p>
+
+        <h4>Why it collapses</h4>
+        <p>
+          Grass only spreads from grass. Graze a patch flat and there is nothing left to reseed it,
+          so the pasture loses the ability to heal in exactly the places it has been hit hardest.
+          Demand rises with the herd while regrowth is capped by how much green is still standing:
+          at one cow per shepherd the pasture holds indefinitely, at three it is stripped and the
+          whole herd starves within a few hundred steps.
+        </p>
+
+        <h4>The controls</h4>
+        <p>
+          Play and pause sit over the grid, restart in its bottom-right corner and fast forward in
+          its top-right, and the slider sets how many cows each shepherd turns out. Restarting deals
+          a fresh pasture but leaves it paused. One time step takes <b data-cfg="stepMs"></b>&thinsp;ms
+          at normal speed; fast forward cycles that to 3&times; and 8&times;.
+        </p>
+      </dialog>
+    </section>
+
+    <hr class="section-divider" />
+
+    <section class="block reveal project-layout" id="project-1">
+      <div class="kicker">Project 01 · Extended Abstract, AAMAS 2026</div>
+      <h2>Low Message-Cost Gossip for Welfare-Optimal Decentralized Decision Making</h2>
+      <div class="section-head">
+        <p class="tagline">with Prof. Peter Marbach · Paphos, Cyprus</p>
+        <p>
+          Now take those herders and multiply them. Shepherds across the whole region graze their
+          own pastures, and years of experience have taught each of them roughly what a pasture can
+          carry — one cow is safe but wasteful, four strips it bare. Their views differ because
+          their perspective differs: some prioritize gains over higher chance of stripping pasture, while others are more cautious prioritizing long term pasture health over potential gains. No central authority
+          collects those opinions and averages them. But the shepherds do talk to each other.
+        </p>
+
+        <h3>Sharing a favourite is enough</h3>
+        <p>
+          The naive fix is to have every agent broadcast its full ranking — but that gets expensive
+          fast as the number of options grows. This work shows you don't need to: a gossip protocol
+          where each agent shares only its current favorite option (or top few) is enough to
+          provably converge on the option that maximizes total welfare across the group — even if
+          that option starts out as nobody's favorite, a scenario we call
+          <strong>option neglect</strong>.
+        </p>
+
+        <h3>More choices, less chatter</h3>
+        <p>
+          The most surprising part: in settings where one option is a clear standout — a common
+          pattern in swarm coordination and decentralized marketplaces — the protocol needs
+          <strong>less</strong> communication as the number of options grows. The shepherds are one
+          instance; the same structure turns up wherever agents hold private opinions and no server
+          is there to poll them.
+        </p>
+      </div>
+
+      <div class="shepherds-visual card">
+        <button class="sim-help-btn" id="shepherdsHelpBtn" type="button"
+                aria-label="How the simulation works">?</button>
+        <h3 class="shepherds-visual-title">Gossiping shepherds</h3>
+        <p class="shepherds-visual-tagline">Shepherds converge on the best option (two cows each)</p>
+
+        <div class="shepherds-canvas sim-canvas">
+          <svg class="shepherds-svg" viewBox="0 0 480 280" role="img" aria-labelledby="shepherdsTitle shepherdsDesc">
+            <title id="shepherdsTitle">Shepherds from many pastures, mingling</title>
+            <desc id="shepherdsDesc">Twenty shepherds drift around a box, each coloured by the herd size — one, two, three or four cows — its own estimates currently rank highest. When two of them pass close by they exchange the option each rates best and average their estimates of it, and over many such interactions the whole population converges on two cows, the size that maximises welfare across the group.</desc>
+          </svg>
+
+          <button class="sim-play-btn" id="shepherdsPlay" type="button"
+                  data-state="play" aria-label="Play the simulation">▶</button>
+          <button class="sim-ff-btn" id="shepherdsFf" type="button" aria-label="Fast forward">»</button>
+          <button class="sim-restart-btn" id="shepherdsRestart" type="button"
+                  aria-label="Restart the simulation">↺</button>
+        </div>
+
+        <svg class="shepherds-chart" viewBox="0 0 480 156" role="img" aria-labelledby="shepherdsChartTitle shepherdsChartDesc">
+          <title id="shepherdsChartTitle">Shepherds supporting each herd size</title>
+          <desc id="shepherdsChartDesc">A bar for each of the four herd sizes, showing how many of the twenty shepherds currently rank it highest.</desc>
+        </svg>
+
+        <p class="shepherds-progress" id="shepherdsProgress" aria-live="polite"></p>
+
+        <div class="shepherds-modes">
+          <button class="btn-chip" type="button" data-shepherd-mode="mixed" aria-pressed="true">Mixed views</button>
+          <button class="btn-chip" type="button" data-shepherd-mode="neglect" aria-pressed="false">Option neglect</button>
+        </div>
+
+        <p class="shepherds-readout" id="shepherdsReadout"></p>
+      </div>
+
+      <dialog class="sim-help" id="shepherdsHelp" aria-labelledby="shepherdsHelpTitle">
+        <button class="sim-help-close" id="shepherdsHelpClose" type="button" aria-label="Close">×</button>
+        <h3 id="shepherdsHelpTitle">How the simulation works</h3>
+
+        <p>
+          Twenty shepherds, each from their own pasture, drift around the box. Every one of them
+          has spent years learning what a pasture can carry and holds a private utility for each
+          herd size &mdash; one, two, three or four cows. Nobody can see anyone else's numbers, and
+          there is no central authority to collect them.
+        </p>
+        <p>
+          Each shepherd keeps an <b>estimate</b> per herd size, starting at its own private utility,
+          and is coloured by whichever estimate is currently highest. That is the option it would
+          name if asked today, and it changes as the estimates move.
+        </p>
+
+        <h4>When two of them interact</h4>
+        <p>
+          They walk in continuous time but only look around every
+          <b data-cfg="tickSeconds"></b>&thinsp;s. At each check, the closest two shepherds who are
+          not on cooldown and are within <b data-cfg="maxDistance"></b> units of each other meet.
+          Each names the single option it currently rates highest, and both replace their estimate
+          of that option with the average of the two:
+        </p>
+        <pre>i names option a,  j names option b
+
+est_i(a) = est_j(a) = ( est_i(a) + est_j(a) ) / 2
+est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
+        <p>
+          The exchange runs both ways, so one interaction can move two options; if they happen to name
+          the same one it is a single average. Both then go on cooldown for about
+          <b data-cfg="cooldownSeconds"></b>&thinsp;s, varied by
+          <b data-derived="jitterPct"></b> so cooldowns do not expire in lockstep &mdash; with
+          identical timers the population locks into fixed couples who have nothing left to tell
+          each other.
+        </p>
+
+        <h4>Why averaging finds the best answer</h4>
+        <p>
+          Pairwise averaging is a consensus operation: it conserves the total, so an option's
+          estimate drifts toward the <em>population mean</em> utility for that option &mdash; which
+          ranks the options in exactly the order total welfare does. Crucially, the option a
+          shepherd keeps naming is the one being dragged toward the truth, while options nobody
+          mentions sit untouched at whatever that shepherd privately thought.
+        </p>
+
+        <h4>The two populations</h4>
+        <p>
+          <b>Mixed views</b> gives everyone the same broad shape &mdash; more cows is better until
+          the pasture dries up &mdash; plus the noise of local experience. Three cows leads the
+          vote at the start even though two cows takes the welfare sum.
+        </p>
+        <p>
+          <b>Option neglect</b> splits them into camps that genuinely disagree: eight swear by one
+          cow, eight by three, four by four. Two cows is everybody's second choice and
+          <em>nobody's</em> first, so it starts with zero support &mdash; yet it still maximises
+          welfare. It gets found because the popular answers deflate toward their true means until
+          the neglected one floats to the top.
+        </p>
+        <p>
+          Total welfare in the population currently loaded:
+          <b data-derived="welfare"></b>.
+        </p>
+
+        <h4>When it stops</h4>
+        <p>
+          The run ends when the lowest estimate anyone holds for two cows rises above the highest
+          estimate anyone holds for anything else. An average always lands between its two inputs,
+          so once those ranges are disjoint no further interaction can bring them back together
+          &mdash; the result cannot be overturned.
+        </p>
+
+        <h4>The controls</h4>
+        <p>
+          Play and pause sit over the box, restart in its bottom-right corner and fast forward in
+          its top-right. Restarting deals the same population fresh and leaves it paused. The two
+          buttons under the chart switch between populations.
+        </p>
+      </dialog>
+    </section>
+
+    <hr class="section-divider" />
+
+    <section class="block reveal project2-layout" id="project-2">
+      <div class="kicker">Project 02 · Pending Review</div>
+      <h2>Learning Norms Through Emulation and Prestige</h2>
+      <div class="section-head">
+        <p class="tagline">Three reward types, one welfare-optimal norm &mdash; without a single vote</p>
+        <p>
+          Shepherds don't only care about their own cows. This project gives every agent three
+          possible reward types, only one of which is active at a time. <strong>Personal
+          utility</strong> is the ordinary payoff of one's own behavior. <strong>Emulation</strong>
+          rewards copying someone else's behavior, in proportion to that behavior's
+          <strong>reputation</strong> &mdash; how much welfare it generates for the group.
+          <strong>Prestige</strong> rewards the agent being copied, in proportion to the total
+          benefit its behavior provides everyone now following it.
+        </p>
+
+        <h3>How the norm emerges</h3>
+        <p>
+          The three steps in the <strong>animation</strong> (see right) sketch the idea. At first
+          every agent is in personal-utility mode, each choosing whatever behavior serves it best
+          on its own (Step 1). One behavior turns out to generate more welfare than the rest, so
+          its reputation climbs, and the other agents realize copying it pays better than going it
+          alone &mdash; they switch to emulation mode and adopt it (Step 2). The agent being
+          copied then switches too: now in prestige mode, its reward depends on how much its
+          behavior benefits its followers, so it starts choosing whichever behavior helps them
+          most (Step 3). That is exactly the welfare-optimal norm &mdash; and because everyone
+          else is still emulating it, the whole group converges on it too.
+        </p>
+
+        <h3>Why gossip alone is not enough</h3>
+        <p>
+          Project 01 has shepherds gossip their way to a single best option, but running that
+          directly on norms breaks down in two ways. It asks every agent to rank <em>all</em>
+          possible norms and know a utility for each, and the space of norms is large. And when
+          several norms sit close to welfare-optimal, the protocol struggles to settle on one of
+          them &mdash; agreement fails not because the group is wrong but because it cannot break
+          a near-tie. Emulation and prestige sidestep both problems: no agent ever ranks the full
+          space of norms, and there is no tie to break &mdash; whoever is currently most
+          beneficial simply attracts the most followers.
+        </p>
+      </div>
+
+      <!-- Project 02 visual set aside — see archive/project2-norms-visual.html
+           for the original two-pastures sim and how to restore it. Trying a
+           new three-step "opinion leader" animation here instead. -->
+      <div class="leader-steps card">
+        <button class="sim-help-btn" id="leaderStepsHelpBtn" type="button"
+                aria-label="How the reward types work">?</button>
+
+        <div class="leader-step">
+          <div class="leader-step-label">Step 1</div>
+          <p class="leader-step-caption">Everyone maximizes<br />personal utility</p>
+          <svg class="leader-step1-svg" viewBox="0 0 220 140" role="img" aria-labelledby="step1Title step1Desc">
+            <title id="step1Title">Everyone maximizing personal utility</title>
+            <desc id="step1Desc">A slightly curved row of agents, a thin slice of a much larger circle, drifts from left to right. Each one turns red and grows briefly as it passes through the fixed centre spotlight, then dims and shrinks again as it continues on and fades out. Nobody is special — only the position is.</desc>
+          </svg>
+        </div>
+
+        <div class="leader-step">
+          <div class="leader-step-label">Step 2</div>
+          <p class="leader-step-caption">Agents copy the behaviors of highly reputated agents</p>
+          <svg class="leader-step2-svg" viewBox="0 0 220 220" role="img" aria-labelledby="step2Title step2Desc">
+            <title id="step2Title">Identifying the leader</title>
+            <desc id="step2Desc">Agents sit in a circle. One at a time, in random order, the others point an arrow at a randomly chosen target, which moves toward the centre as more arrows arrive, reaching the centre once everyone points to it. It then resets and a new random target is chosen.</desc>
+          </svg>
+        </div>
+
+        <div class="leader-step">
+          <div class="leader-step-label">Step 3</div>
+          <p class="leader-step-caption">The leader maximizes its prestige, adopting the welfare-optimal norm</p>
+          <svg class="leader-step3-svg" viewBox="0 0 220 220" role="img" aria-labelledby="step3Title step3Desc">
+            <title id="step3Title">The leader adopts the welfare-optimal norm</title>
+            <desc id="step3Desc">Starting from the leader at the centre of the circle, dots flow inward from every agent along the arrows, then the arrows reverse and dots flow back outward from the leader to the group. The leader grows slightly larger after each round, before the animation resets.</desc>
+          </svg>
+        </div>
+      </div>
+
+      <dialog class="sim-help" id="leaderStepsHelp" aria-labelledby="leaderStepsHelpTitle">
+        <button class="sim-help-close" id="leaderStepsHelpClose" type="button" aria-label="Close">&times;</button>
+        <h3 id="leaderStepsHelpTitle">The three reward types</h3>
+
+        <p>
+          Every agent can earn a reward in one of three ways, but only one at a time &mdash; an
+          agent is always in exactly one <b>mode</b>, and its mode is what determines which
+          reward it is chasing.
+        </p>
+
+        <h4>Personal utility</h4>
+        <p>
+          The ordinary payoff of one's own behavior &mdash; how many cows it can graze, how well
+          it eats. This is the only reward on offer at the very start.
+        </p>
+
+        <h4>Reputation</h4>
+        <p>
+          A property of a <em>behavior</em>, not of any one agent: how much welfare that behavior
+          generates for the group. Some behaviors are simply better for everyone than others, and
+          reputation is how good a behavior actually is.
+        </p>
+
+        <h4>Emulation</h4>
+        <p>
+          The reward for copying someone else's behavior, in emulation mode. It is directly
+          proportional to that behavior's reputation &mdash; copying something highly reputed
+          pays better than copying something mediocre, or than sticking with personal utility.
+        </p>
+
+        <h4>Prestige</h4>
+        <p>
+          The reward for <em>being</em> copied, in prestige mode. It is a multiple of the total
+          benefit an agent's behavior provides everyone currently following it &mdash; more
+          followers, or a more beneficial behavior, both raise it.
+        </p>
+
+        <h4>Step 1 &mdash; personal utility</h4>
+        <p>
+          Every agent starts in personal-utility mode, each independently choosing whatever
+          behavior serves it best. Nobody is watching anybody else yet.
+        </p>
+
+        <h4>Step 2 &mdash; emulation</h4>
+        <p>
+          One behavior turns out to generate more welfare than the rest, so its reputation
+          climbs. The other agents notice that copying it would pay better than their own
+          personal utility, switch to emulation mode, and adopt it.
+        </p>
+
+        <h4>Step 3 &mdash; prestige</h4>
+        <p>
+          The agent being copied switches mode too. In prestige mode its reward depends on how
+          much its behavior benefits its followers, so it starts choosing whichever behavior
+          helps them most &mdash; which is exactly the welfare-optimal norm. Because everyone
+          else is still emulating it, that norm then reaches the whole group.
+        </p>
+      </dialog>
+    </section>
+
+    <hr class="section-divider" />
+
+    <section class="block reveal" id="project-3">
+      <div class="kicker">Project 03 · In progress</div>
+      <h2>The Dynamics Behind the Norm</h2>
+      <div class="section-head">
+        <p class="tagline">Personal utility alone fails; a leader everyone else emulates does not</p>
+        <p>
+          Project 02 shows the idea works. This project runs the realistic version: agents keep
+          running estimates of their rewards and reputations, behaviors are parameterized rather
+          than picked from a short list, and every agent has only local, limited information.
+          Underneath, an agent is always in one of two modes &mdash; <strong>acting</strong> on a
+          behavior of its own, or <strong>participating</strong> in someone else's &mdash; and the
+          three simulations below are where that distinction actually does the work Project 02
+          only sketched.
+        </p>
+        <p>
+          All three pastures below run on the same seed and starting grass, so any difference
+          between them comes from the herd-size policy alone. <strong>Greedy</strong> fixes every
+          shepherd at its own personal-utility-maximizing herd size &mdash; the top pick of the
+          first four shepherds from Project 01 &mdash; and never revisits it. <strong>Fixed</strong>
+          is Project 02's baseline: two cows, every shepherd, always. <strong>Leader</strong> starts
+          identically to Greedy, but one shepherd plays an adaptive rule from the start &mdash;
+          three cows once the pasture reads above 80% grass, two otherwise &mdash; and the other
+          three switch, one by one, to mirror whatever that shepherd is currently doing. The chart
+          tracks cumulative grass eaten across all three, the same metric Project 02 used.
+        </p>
+      </div>
+
+      <div class="dynamics-visual card">
+        <button class="sim-help-btn" id="dynamicsHelpBtn" type="button"
+                aria-label="How the simulations work">?</button>
+
+        <div class="dynamics-canvas sim-canvas">
+          <svg class="dynamics-svg" viewBox="0 0 720 512" role="img" aria-labelledby="dynamicsTitle dynamicsDesc">
+            <title id="dynamicsTitle">Three pastures, three herd-size policies</title>
+            <desc id="dynamicsDesc">Three six-by-six pastures run side by side from the same seed and starting grass. In the first, each of four shepherds is fixed at its own personal-utility-maximizing herd size. In the second, every shepherd is fixed at two cows. In the third, the shepherds start like the first, but one plays an adaptive rule based on the pasture's greenness while the other three switch, one by one, to mirror it. A chart below tracks cumulative grass eaten across all three.</desc>
+          </svg>
+
+          <button class="sim-play-btn" id="dynamicsOverlayPlay" type="button"
+                  data-state="play" aria-label="Play all three simulations">&#9654;</button>
+          <button class="sim-ff-btn" id="dynamicsFf" type="button" aria-label="Fast forward">&raquo;</button>
+          <button class="sim-restart-btn" id="dynamicsRestart" type="button"
+                  aria-label="Run all three simulations again">&#8634;</button>
+        </div>
+
+        <p class="dynamics-verdict" id="dynamicsVerdict" aria-live="polite"></p>
+      </div>
+
+      <dialog class="sim-help" id="dynamicsHelp" aria-labelledby="dynamicsHelpTitle">
+        <button class="sim-help-close" id="dynamicsHelpClose" type="button" aria-label="Close">&times;</button>
+        <h3 id="dynamicsHelpTitle">How the three simulations work</h3>
+
+        <p>
+          All three pastures use exactly the grazing model from <em>The Problem</em> above,
+          started from the same grass and the same random seed, so nothing but the herd-size
+          policy differs between them.
+        </p>
+
+        <h4>Greedy</h4>
+        <p>
+          Shepherds one through four are fixed, for the whole run, at their own
+          personal-utility-maximizing herd size &mdash; <b data-cfg="personalTop"></b> cows
+          respectively. These are the top picks of the first four shepherds in Project 01's
+          utility table &mdash; nobody is coordinating, everybody is doing what's individually
+          best for them.
+        </p>
+
+        <h4>Fixed</h4>
+        <p>
+          Every shepherd is fixed at <b data-cfg="brownCows"></b> cows for the whole run &mdash;
+          Project 02's baseline norm.
+        </p>
+
+        <h4>Leader</h4>
+        <p>
+          Shepherd <b data-derived="leaderLabel"></b> plays an adaptive rule from the start:
+          <b data-derived="greenPct"></b> grass or more calls for <b data-cfg="greenCows"></b>
+          cows, anything less calls for <b data-cfg="brownCows"></b>. It re-checks the pasture
+          every <b data-cfg="reconsiderEvery"></b> steps. The other three shepherds start at
+          their own personal top pick, then switch to mirroring the leader's current choice at
+          steps <b data-derived="switchSteps"></b> respectively &mdash; one by one, not all at
+          once.
+        </p>
+
+        <h4>What is being counted</h4>
+        <p>
+          The chart tracks cumulative grass eaten, the same metric Project 02 used: a cow eats
+          almost exactly what it burns, so this is really cow-steps sustained &mdash; how much
+          grazing each pasture actually supported.
+        </p>
+
+        <h4>The controls</h4>
+        <p>
+          Play and pause sit over the middle pasture, fast forward in the top-right corner and
+          restart in the bottom-right; both appear on hover. Restarting deals a fresh seed and
+          leaves the run paused. A run lasts <b data-cfg="horizon"></b> steps and then stops on
+          its verdict.
+        </p>
+      </dialog>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">© 2026 Vedic Sharma · University of Toronto</div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/shepherd-sprite.js"></script>
+<script src="js/cow-sprite.js"></script>
+<script src="js/commons.js"></script>
+<script src="js/commons-sim.js"></script>
+<script src="js/shepherds.js"></script>
+<script src="js/shepherds-sim.js"></script>
+<script src="js/leader-emergence.js"></script>
+<!-- js/norms.js, js/norms-sim.js are still set aside with the Project 02
+     visual — see archive/project2-norms-visual.html. js/pasture-model.js is
+     back in use though: Project 03's three pastures run on it too. -->
+<script src="js/pasture-model.js"></script>
+<script src="js/dynamics.js"></script>
+<script src="js/dynamics-sim.js"></script>
+</body>
+</html>
