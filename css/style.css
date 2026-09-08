@@ -526,6 +526,21 @@ table.teach td.course { font-weight: 600; }
 table.teach td.code { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 table.teach td.hours { color: var(--primary); font-weight: 600; white-space: nowrap; }
 
+/* A placeholder line under each course row, for a short description to be
+   filled in later. Grouped visually with the row above it: the divider moves
+   down onto the note itself, so the pair reads as one entry rather than two
+   separate rows. */
+table.teach tbody tr:not(.teach-note-row) td { border-bottom: none; }
+table.teach tbody tr.teach-note-row td { border-bottom: 1px solid var(--border); }
+table.teach tbody tr.teach-note-row:last-child td { border-bottom: none; }
+table.teach tbody tr.teach-note-row:hover { background: none; }
+table.teach td.teach-note {
+  padding: 0 18px 14px;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
 /* ===== Contact ===== */
 /* auto-fill, not auto-fit: a category with fewer cards (CV's grid holds just
    one) still gets tracks sized the same as a fuller grid above it — auto-fit
