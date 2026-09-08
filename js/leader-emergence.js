@@ -432,6 +432,7 @@
     const FOLLOWER_PAUSE_MS = 140;   // brief beat at the follower before it sends its dot back
     const HOLD_MS = 900;
     const RESET_PAUSE_MS = 500;
+    const GROW_EASE_MS = 260;        // time constant for easing a radius up to its target
 
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     const lineLayer = el("g", {});
@@ -460,8 +461,14 @@
     // each), the leader gets ringCount inbound arrivals per cycle (GROWTH
     // split evenly across them), so after MAX_CYCLES cycles both land on the
     // same caps as before.
+    //
+    // An arrival only moves the *target*; the radius actually drawn eases
+    // toward it every frame (see updateGrowth), so a node swells smoothly
+    // instead of snapping a whole step wider the instant a dot lands.
     let leaderGrowth = 0;
     let agentGrowth = [];
+    let leaderShown = 0;
+    let agentShown = [];
 
     // The line between an agent and the leader never changes once drawn —
     // with no arrowhead, a plain segment doesn't care which end is which, so
@@ -475,6 +482,8 @@
 
       leaderGrowth = 0;
       agentGrowth = new Array(ringCount).fill(0);
+      leaderShown = 0;
+      agentShown = new Array(ringCount).fill(0);
 
       for (let i = 0; i < ringCount; i++) {
         const sprite = makeAgentSprite("var(--text-muted)", "leader-agent-sprite");
@@ -493,15 +502,33 @@
       agentLayer.appendChild(leaderNode);
     }
 
-    // Called the instant a single dot finishes one leg of its trip — grows
-    // the receiving node right away rather than waiting for anyone else.
+    // Called the instant a single dot finishes one leg of its trip — raises
+    // the receiving node's target right away rather than waiting for anyone
+    // else; updateGrowth walks the drawn radius up to it over the next few
+    // frames.
     function onArrive(inward, agentIdx) {
       if (inward) {
         leaderGrowth = Math.min(leaderGrowth + GROWTH / ringCount, GROWTH * MAX_CYCLES);
-        placeAgentSprite(leaderNode, cx, cy, BASE_LEADER_R + leaderGrowth);
       } else {
         agentGrowth[agentIdx] = Math.min(agentGrowth[agentIdx] + AGENT_GROWTH, AGENT_GROWTH * MAX_CYCLES);
-        placeAgentSprite(agentNodes[agentIdx], ring[agentIdx].x, ring[agentIdx].y, AGENT_R + agentGrowth[agentIdx]);
+      }
+    }
+
+    // Exponential ease toward the target radius, framed in dt so it runs at
+    // the same speed whatever the frame rate. Snaps the last hundredth of a
+    // pixel shut so a node that has finished growing stops being re-rendered.
+    function updateGrowth(dt) {
+      const k = 1 - Math.exp(-dt / GROW_EASE_MS);
+      if (Math.abs(leaderGrowth - leaderShown) > 0.005) {
+        leaderShown += (leaderGrowth - leaderShown) * k;
+        if (Math.abs(leaderGrowth - leaderShown) <= 0.005) leaderShown = leaderGrowth;
+        placeAgentSprite(leaderNode, cx, cy, BASE_LEADER_R + leaderShown);
+      }
+      for (let i = 0; i < ringCount; i++) {
+        if (Math.abs(agentGrowth[i] - agentShown[i]) <= 0.005) continue;
+        agentShown[i] += (agentGrowth[i] - agentShown[i]) * k;
+        if (Math.abs(agentGrowth[i] - agentShown[i]) <= 0.005) agentShown[i] = agentGrowth[i];
+        placeAgentSprite(agentNodes[i], ring[i].x, ring[i].y, AGENT_R + agentShown[i]);
       }
     }
 
@@ -579,6 +606,11 @@
     function loop(now) {
       const dt = now - last;
       last = now;
+
+      // Growth eases every frame regardless of phase, so a trip that lands
+      // just before the last cycle ends still finishes swelling during the
+      // hold rather than being cut off.
+      updateGrowth(dt);
 
       if (phase === "cycling") {
         updateParticles(dt);

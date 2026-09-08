@@ -186,7 +186,7 @@
   // comparable as opinion moves rather than rescaling under their own feet.
   const chart = document.querySelector(".shepherds-chart");
   const OPTIONS = [1, 2, 3, 4];
-  const CW = 480, CH = 156;
+  const CW = 480, CH = 176;
   const PLOT_TOP = 26, BASE_Y = 120;      // baseline of the bars
   const BAR_W = 52, BAR_GAP = 32;
   const GROUP_W = OPTIONS.length * BAR_W + (OPTIONS.length - 1) * BAR_GAP;
@@ -229,23 +229,23 @@
 
       const count = el("text", {                     // value, in text ink
         x: barX(i) + BAR_W / 2, y: 0, "text-anchor": "middle",
-        "font-size": "14", "font-weight": "700", fill: "var(--text)"
+        "font-size": "15.2", "font-weight": "700", fill: "var(--text)"
       });
       chart.appendChild(count);
       barLabels.push(count);
 
       const name = el("text", {                      // category, under the bar
-        x: barX(i) + BAR_W / 2, y: BASE_Y + 18, "text-anchor": "middle",
-        "font-size": "11.5", fill: "var(--text-muted)"
+        x: barX(i) + BAR_W / 2, y: BASE_Y + 22, "text-anchor": "middle",
+        "font-size": "15.2", fill: "var(--text-muted)"
       });
       name.textContent = `${k} ${k === 1 ? "cow" : "cows"}`;
       chart.appendChild(name);
 
       if (k === 2) {                                 // the welfare optimum
         const note = el("text", {
-          x: barX(i) + BAR_W / 2, y: BASE_Y + 33, "text-anchor": "middle",
+          x: barX(i) + BAR_W / 2, y: BASE_Y + 44, "text-anchor": "middle",
           // text ink, not the accent: amber is already option 3's bar colour
-          "font-size": "10", "font-weight": "600", fill: "var(--text-muted)"
+          "font-size": "15.2", "font-weight": "600", fill: "var(--text-muted)"
         });
         note.textContent = "welfare-optimal";
         chart.appendChild(note);

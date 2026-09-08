@@ -139,7 +139,10 @@
   [["bare", LGX - 6, "end"], ["lush", LGX + LEG_W + 6, "start"]].forEach(([word, x, anchor]) => {
     const t = el("text", {
       x, y: LGY + SH - 1, "text-anchor": anchor,
-      "font-size": "9", "letter-spacing": "0.6", fill: "var(--text-muted)"
+      // 15.2 is the card type floor (see css .commons-visual-tagline's
+      // effective size); the strip is shallower than the label, so the label
+      // straddles it rather than sitting inside it.
+      "font-size": "15.2", "letter-spacing": "0.4", fill: "var(--text-muted)"
     });
     t.textContent = word;
     legend.appendChild(t);

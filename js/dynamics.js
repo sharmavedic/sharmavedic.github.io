@@ -19,16 +19,31 @@
   const NS = "http://www.w3.org/2000/svg";
 
   // ---- Layout ------------------------------------------------------------
-  const N = 6, LEVELS = 6, TILE = 26;
-  const GRID = N * TILE;                    // 156
-  const W = 720, H = 512;
-  const PANEL_W = 220;
-  const PANEL_X = [10, 250, 490];           // panel left edges
+  // The card spans the page measure (see --dynamics-card), so the drawing is
+  // 1190 units wide and one unit renders as one CSS pixel at full width. That
+  // matters: the type sizes below are in user units, so widening by changing
+  // these constants keeps the labels at the size they were designed at, where
+  // scaling a narrower viewBox up would have blown them up with everything
+  // else.
+  const N = 6, LEVELS = 6, TILE = 40;
+  const GRID = N * TILE;                    // 240
+  const W = 1190, H = 720;
+  const PANEL_W = 380;
+  const PANEL_X = [10, 405, 800];           // panel left edges, 15 apart
   const PANEL_TOP = 8;
-  const GRID_Y = PANEL_TOP + 58;            // room above for title/subtitle/shepherds
-  const COW_SCALE = 0.32;
-  const SHEPHERD_SCALE = 0.36;
-  const CHART = { left: 46, right: 690, top: 372, bottom: 452 };
+  const GRID_Y = PANEL_TOP + 96;            // room above for title/subtitle/shepherds.
+                                            // Was 58 at the old type sizes and 70
+                                            // after they went up; both left every
+                                            // band in this column 1-4 units apart,
+                                            // which read as cramped. The whole
+                                            // column is now spaced on ~12-16 unit
+                                            // gaps between one band's ink and the
+                                            // next's.
+  const COW_SCALE = 0.49;                   // 0.32 was tuned to TILE 26
+  const SHEPHERD_SCALE = 0.42;
+  const CHART = { left: 76, right: 700, top: 470, bottom: 646 };
+  // The stats block fills the width the plot gave up, to the right of a rule.
+  const SIDE = { rule: 748, left: 772, right: 1180, top: CHART.top };
 
   const HERD_COLORS = window.ShepherdSprite.HERDS;
   const ACCENT_VARS = ["--opt-1", "--opt-2", "--opt-3"];
@@ -77,27 +92,27 @@
     svg.appendChild(g);
 
     const head = el("text", {
-      x: x0 + PANEL_W / 2, y: PANEL_TOP + 12, "text-anchor": "middle",
-      "font-size": "12.5", "font-weight": "600", fill: "var(--text)"
+      x: x0 + PANEL_W / 2, y: PANEL_TOP + 14, "text-anchor": "middle",
+      "font-size": "16", "font-weight": "600", fill: "var(--text)"
     });
     head.textContent = title;
     g.appendChild(head);
 
     const rule = el("rect", {
-      x: x0 + PANEL_W / 2 - 20, y: PANEL_TOP + 18, width: 40, height: 2, rx: 1,
+      x: x0 + PANEL_W / 2 - 20, y: PANEL_TOP + 24, width: 40, height: 2, rx: 1,
       fill: accents[slot]
     });
     g.appendChild(rule);
 
     const sub = el("text", {
-      x: x0 + PANEL_W / 2, y: PANEL_TOP + 32, "text-anchor": "middle",
-      "font-size": "9.5", fill: "var(--text-muted)"
+      x: x0 + PANEL_W / 2, y: PANEL_TOP + 46, "text-anchor": "middle",
+      "font-size": "15.2", fill: "var(--text-muted)"
     });
     sub.textContent = subtitle;
     g.appendChild(sub);
 
     // Four shepherds in a compact row above the grid.
-    const shepherdY = GRID_Y - 16;
+    const shepherdY = GRID_Y - 24;
     const shepherdGap = PANEL_W / 5;
     HERD_COLORS.forEach((color, i) => {
       const fig = window.ShepherdSprite.make(color, "dynamics-shepherd");
@@ -133,16 +148,16 @@
     g.appendChild(cowGroup);
 
     // One compact stat row under the grid: grass% · head · eaten.
-    const statsY = GRID_Y + GRID + 18;
+    const statsY = GRID_Y + GRID + 32;
     const stats = STAT_KEYS.map((key, i) => {
       const cx = x0 + PANEL_W * (i + 0.5) / 3;
       const value = el("text", {
-        x: cx, y: statsY, "text-anchor": "middle", "font-size": "12.5",
+        x: cx, y: statsY, "text-anchor": "middle", "font-size": "16",
         "font-weight": "600", fill: "var(--text)"
       });
       value.textContent = "–";
       const label = el("text", {
-        x: cx, y: statsY + 13, "text-anchor": "middle", "font-size": "9",
+        x: cx, y: statsY + 26, "text-anchor": "middle", "font-size": "15.2",
         fill: "var(--text-muted)"
       });
       label.textContent = key;
@@ -204,12 +219,18 @@
     makePanel(2, "Leader", "Follow the highest-reputation behavior")
   ];
 
+  // The chart is a fixed-width window onto an endless run: it always shows
+  // SPAN steps, so once the run passes SPAN the left edge becomes
+  // (current step - SPAN) and the whole thing scrolls. Before that the window
+  // is 0..SPAN and the lines grow into it.
+  const START_SPAN = 500;
+
   // ---- Harvest chart -------------------------------------------------------
   const chartGroup = el("g", { class: "dynamics-chart" });
   svg.appendChild(chartGroup);
 
   const chartTitle = el("text", {
-    x: CHART.left, y: CHART.top - 14, "font-size": "11",
+    x: CHART.left, y: CHART.top - 28, "font-size": "15.2",
     "font-weight": "600", fill: "var(--text-muted)"
   });
   chartTitle.textContent = "Grass eaten (cumulative)";
@@ -222,8 +243,8 @@
       stroke: "var(--border)", "stroke-width": 1, opacity: "0.5"
     })));
     const t = el("text", {
-      x: CHART.left - 6, y: CHART.bottom, "text-anchor": "end",
-      "font-size": "9.5", fill: "var(--text-muted)"
+      x: CHART.left - 8, y: CHART.bottom, "text-anchor": "end",
+      "font-size": "15.2", fill: "var(--text-muted)"
     });
     t.textContent = "";
     gridLabels.push(chartGroup.appendChild(t));
@@ -235,22 +256,22 @@
   }));
 
   const xZero = el("text", {
-    x: CHART.left, y: CHART.bottom + 13, "text-anchor": "middle",
-    "font-size": "9.5", fill: "var(--text-muted)"
+    x: CHART.left, y: CHART.bottom + 22, "text-anchor": "middle",
+    "font-size": "15.2", fill: "var(--text-muted)"
   });
   xZero.textContent = "0";
   chartGroup.appendChild(xZero);
 
   const xNow = el("text", {
-    x: CHART.left, y: CHART.bottom + 13, "text-anchor": "middle",
-    "font-size": "9.5", fill: "var(--text-muted)"
+    x: CHART.left, y: CHART.bottom + 22, "text-anchor": "middle",
+    "font-size": "15.2", fill: "var(--text-muted)"
   });
   xNow.textContent = "";
   chartGroup.appendChild(xNow);
 
   const xLabel = el("text", {
-    x: (CHART.left + CHART.right) / 2, y: CHART.bottom + 26, "text-anchor": "middle",
-    "font-size": "9.5", fill: "var(--text-muted)"
+    x: (CHART.left + CHART.right) / 2, y: CHART.bottom + 50, "text-anchor": "middle",
+    "font-size": "15.2", fill: "var(--text-muted)"
   });
   xLabel.textContent = "time step";
   chartGroup.appendChild(xLabel);
@@ -263,31 +284,115 @@
 
   const endLabels = panels.map((panel) => {
     const t = el("text", {
-      x: CHART.left, y: CHART.bottom, "font-size": "10", "font-weight": "600",
-      fill: accents[panel.slot], "text-anchor": "start"
+      x: CHART.left, y: CHART.bottom, "font-size": "15.2", "font-weight": "600",
+      fill: accents[panel.slot], "text-anchor": "end"
     });
     t.textContent = "";
     return chartGroup.appendChild(t);
   });
 
-  let history = [];   // { step, values: [a, b, c] }
-  let xSpan = 600;
+  // ---- Side stats ----------------------------------------------------------
+  // Three rows, one per policy, in the space the narrowed plot freed. They
+  // carry what the panels and the chart do *not*: how fast each pasture is
+  // harvesting right now (the slope of its line over the visible window, which
+  // is hard to read off near-flat cumulative curves) and how many cows it has
+  // lost since the run began.
+  const sideGroup = el("g", { class: "dynamics-side" });
+  svg.appendChild(sideGroup);
 
-  function niceMax(v) {
+  sideGroup.appendChild(el("line", {
+    x1: SIDE.rule, y1: SIDE.top - 8, x2: SIDE.rule, y2: CHART.bottom,
+    stroke: "var(--border)", "stroke-width": 1
+  }));
+
+  const sideTitle = el("text", {
+    x: SIDE.left, y: SIDE.top - 28, "font-size": "15.2",
+    "font-weight": "600", fill: "var(--text-muted)"
+  });
+  sideTitle.textContent = `Last ${START_SPAN} steps`;
+  sideGroup.appendChild(sideTitle);
+
+  const RATE_X = SIDE.right - 130, STARVED_X = SIDE.right;
+  [[RATE_X, "eaten / 100 steps"], [STARVED_X, "starved"]].forEach(([x, label]) => {
+    const t = el("text", {
+      x, y: SIDE.top + 20, "text-anchor": "end", "font-size": "15.2",
+      fill: "var(--text-muted)"
+    });
+    t.textContent = label;
+    sideGroup.appendChild(t);
+  });
+
+  const sideRows = panels.map((panel, i) => {
+    const y = SIDE.top + 60 + i * 48;
+    const name = el("text", {
+      x: SIDE.left, y, "font-size": "15.2", "font-weight": "600",
+      fill: accents[i]
+    });
+    name.textContent = ["Greedy", "Fixed", "Leader"][i];
+    const rate = el("text", {
+      x: RATE_X, y, "text-anchor": "end", "font-size": "16",
+      "font-weight": "600", fill: "var(--text)"
+    });
+    rate.textContent = "–";
+    const starved = el("text", {
+      x: STARVED_X, y, "text-anchor": "end", "font-size": "16",
+      "font-weight": "600", fill: "var(--text)"
+    });
+    starved.textContent = "–";
+    [name, rate, starved].forEach((t) => sideGroup.appendChild(t));
+    sideGroup.appendChild(el("line", {
+      x1: SIDE.left, y1: y + 18, x2: SIDE.right, y2: y + 18,
+      stroke: "var(--border)", "stroke-width": 1, opacity: "0.6"
+    }));
+    return { name, rate, starved };
+  });
+
+  const sideNote = el("text", {
+    x: SIDE.left, y: CHART.bottom + 22, "font-size": "15.2", fill: "var(--text-muted)"
+  });
+  sideNote.textContent = "Harvest rate is the slope of each line above.";
+  sideGroup.appendChild(sideNote);
+
+  let history = [];   // { step, values: [a, b, c] } for the visible window only
+  let xSpan = START_SPAN;
+
+  // Because the window is fixed-width, samples that scroll off the left are
+  // dropped on the way in — so an endless run costs a bounded ~xSpan points at
+  // full per-step resolution, with no decimation and no growth. One sample
+  // from *before* the left edge is kept so the lines reach it rather than
+  // starting a step short.
+  function prune(lastStep) {
+    const xMin = Math.max(0, lastStep - xSpan);
+    while (history.length > 1 && history[1].step <= xMin) history.shift();
+  }
+
+  // Three grid lines split the plot into thirds, so the axis top has to be
+  // three nice steps rather than one nice number — otherwise the labels come
+  // out as 1667 / 3333 / 5000. Rounding the *step* instead keeps them round
+  // and stops the ceiling running away from the data (5000 for a 1989 peak
+  // squashed every line into the bottom third).
+  function niceStep(v) {
     if (v <= 0) return 10;
     const pow = Math.pow(10, Math.floor(Math.log10(v)));
     const n = v / pow;
-    const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+    const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
     return step * pow;
   }
+  function niceMax(v) { return 3 * niceStep(v / 3); }
 
   function drawChart() {
-    const lastStep = history.length ? history[history.length - 1].step : 0;
+    const points = history;
+    const lastStep = points.length ? points[points.length - 1].step : 0;
+    const xMin = Math.max(0, lastStep - xSpan);
     let top = 90;
-    history.forEach((h) => { h.values.forEach((v) => { top = Math.max(top, v); }); });
-    top = niceMax(top * 1.1);
+    points.forEach((h) => { h.values.forEach((v) => { top = Math.max(top, v); }); });
+    top = niceMax(top * 1.05);
 
-    const px = (step) => CHART.left + (step / xSpan) * (CHART.right - CHART.left);
+    // The one sample kept from before the window would land left of the plot,
+    // so x is clamped to the axis rather than allowed outside it.
+    const px = (step) =>
+      clamp(CHART.left + ((step - xMin) / xSpan) * (CHART.right - CHART.left),
+            CHART.left, CHART.right);
     const py = (v) => CHART.bottom - (v / top) * (CHART.bottom - CHART.top);
 
     gridLines.forEach((line, i) => {
@@ -299,23 +404,48 @@
       gridLabels[i].textContent = String(Math.round(v));
     });
 
+    // Both ends of the axis move once the window starts scrolling.
+    xZero.textContent = String(xMin);
     xNow.textContent = lastStep > 20 ? String(lastStep) : "";
     xNow.setAttribute("x", px(lastStep).toFixed(1));
 
-    const placedY = [];
+    // Each line's value sits off its own tip rather than beside it: the top
+    // line's above, the bottom line's below, and the middle one on whichever
+    // side has the larger gap to its neighbour — so a label never lands in the
+    // narrow space between two lines when there is a wide space on the other
+    // side of one of them.
+    const last = points[points.length - 1];
+    const above = [false, false, false];
+    if (last) {
+      const rank = [0, 1, 2].sort((a, b) => last.values[b] - last.values[a]);
+      const [hi, mid, lo] = rank.map((i) => py(last.values[i]));
+      above[rank[0]] = true;
+      above[rank[2]] = false;
+      above[rank[1]] = mid - hi >= lo - mid;   // py grows downward
+    }
+
     panels.forEach((panel, i) => {
       lines[i].setAttribute("points",
-        history.map((h) => `${px(h.step).toFixed(1)},${py(h.values[i]).toFixed(1)}`).join(" "));
-      const last = history[history.length - 1];
+        points.map((h) => `${px(h.step).toFixed(1)},${py(h.values[i]).toFixed(1)}`).join(" "));
       if (!last) { endLabels[i].textContent = ""; return; }
       endLabels[i].textContent = String(Math.round(last.values[i]));
-      const lx = clamp(px(last.step) + 6, CHART.left, CHART.right - 26);
-      let ly = py(last.values[i]) + 3.5;
-      // Nudge labels apart when two or more lines end up close together.
-      while (placedY.some((y) => Math.abs(y - ly) < 11)) ly += 11;
-      placedY.push(ly);
+      const lx = clamp(px(last.step), CHART.left + 34, CHART.right);
+      // Only the lower bound really guards anything: a value can sit right up
+      // against the ceiling, and clamping that label back *inside* the plot
+      // would flip it below its own line — which is what the rule above exists
+      // to prevent. Above-the-line labels are allowed to overhang the axis.
+      const ly = clamp(py(last.values[i]) + (above[i] ? -9 : 20),
+                       CHART.top - 9, CHART.bottom - 2);
       endLabels[i].setAttribute("x", lx.toFixed(1));
       endLabels[i].setAttribute("y", ly.toFixed(1));
+    });
+
+    const first = points[0];
+    const span = first && last ? last.step - first.step : 0;
+    sideRows.forEach((row, i) => {
+      row.rate.textContent = span > 0
+        ? Math.round(((last.values[i] - first.values[i]) / span) * 100).toLocaleString()
+        : "–";
     });
   }
 
@@ -329,6 +459,7 @@
       panel.rule.setAttribute("fill", accents[i]);
       lines[i].setAttribute("stroke", accents[i]);
       endLabels[i].setAttribute("fill", accents[i]);
+      sideRows[i].name.setAttribute("fill", accents[i]);
     });
     drawChart();
   }
@@ -341,9 +472,18 @@
 
   window.dynamicsScene = {
     svg, N, LEVELS, TILE, W, H, panels, HERD_COLORS,
-    setHorizon(n) { xSpan = n; },
-    resetChart() { history = []; drawChart(); },
-    pushSample(step, values) { history.push({ step, values }); },
+    setHorizon(n) {
+      xSpan = n;
+      sideTitle.textContent = `Last ${n} steps`;
+    },
+    setStarved(counts) {
+      sideRows.forEach((row, i) => { row.starved.textContent = String(counts[i]); });
+    },
+    resetChart() { history = []; xSpan = START_SPAN; drawChart(); },
+    pushSample(step, values) {
+      history.push({ step, values });
+      prune(step);
+    },
     drawChart,
     paint
   };

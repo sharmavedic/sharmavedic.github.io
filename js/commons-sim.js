@@ -16,8 +16,8 @@
 //       REGROW_PER_NEIGHBOUR * (number of its 8 neighbours holding high grass)
 //
 // Regrowth is the part that bites. Grass only spreads from grass, so a tile
-// ringed by lush neighbours recovers at 8.8% a step while a tile in a grazed-out
-// patch recovers at nothing. Edge tiles cap at 5.5% and corners at 3.3%, simply
+// ringed by lush neighbours recovers at 12% a step while a tile in a grazed-out
+// patch recovers at nothing. Edge tiles cap at 7.5% and corners at 4.5%, simply
 // because they have fewer neighbours to seed them. Graze a region flat and it
 // stays flat — the pasture loses the ability to heal itself, and the cows
 // standing on it run out of energy and die.
@@ -38,7 +38,7 @@
     moveValue: 0.75,         // Q(move): the fixed opportunity value of walking on
     temperature: 0.08,       // tau: -> 0 is a hard threshold, large is a coin flip
     moveBias: 2.5,           // pull toward greener neighbours; 0 is a blind random walk
-    regrowPerNeighbour: 0.011, // per adjacent tile holding high grass, per step
+    regrowPerNeighbour: 0.015, // per adjacent tile holding high grass, per step
     highGrass: 3,            // a neighbour at this level or above counts as high grass
     moveFraction: 0.55       // share of a step spent walking, the rest standing
   };
@@ -105,7 +105,8 @@
   let herdStart = 0;    // how many were turned out to begin with
   let steps = 0;
   let playing = false;
-  let speed = 1;        // fast-forward multiplier on CONFIG.stepMs
+  let speed = 3;        // fast-forward multiplier on CONFIG.stepMs. Runs open at 3x
+                        // here and in the gossip sim; only Project 03 opens at 8x
   let finished = false; // the last cow has starved; the run is over
   let stepClock = 0;    // ms accumulated toward the next step
 
@@ -397,7 +398,7 @@
     ffBtn.addEventListener("click", () => {
       setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]);
     });
-    setSpeed(1);
+    setSpeed(3);
   }
 
   function togglePlay() {

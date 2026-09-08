@@ -26,13 +26,19 @@
 
   const CONFIG = {
     stepMs: 220,               // wall-clock length of one time step
-    horizon: 600,              // steps in a full run, then it stops on the verdict
+    horizon: 10000,            // steps in a full run, then it stops on the standing
+    chartSpan: 500,            // steps visible in the chart at once. The run is far
+                               // longer than the window, so past this the chart
+                               // scrolls: the x-axis reads (step - chartSpan) .. step
     regrowBase: 0.004,         // seed-bank regrowth, matching Project 02's pastures
-    personalTop: [4, 1, 2, 3], // shepherds 0-3's own top pick, from Project 01
+    personalTop: [4, 4, 3, 2], // shepherds 0-3's own top pick, from Project 01
     leader: 0,                 // which shepherd plays the adaptive rule throughout
     switchAt: { 1: 150, 2: 300, 3: 450 },  // step at which each follower joins
+    restockAt: [0.5, 0.6, 0.7, 0.8],  // grass a starved-out greedy shepherd waits for
+                                      // before turning its cows back out, least
+                                      // greedy first — see restockThreshold below
     reconsiderEvery: 20,       // steps between the leader re-checking greenness
-    greenThreshold: 0.8,       // grass fraction at/above which the leader turns out 3
+    greenThreshold: 0.7,       // grass fraction at/above which the leader turns out 3
     greenCows: 3, brownCows: 2,
     moveFraction: 0.55,
     sampleEvery: 1
@@ -55,13 +61,36 @@
   let switched = new Set(); // follower shepherd indices that have joined the leader, in the "leader" pasture
   let steps = 0;
   let playing = false;
-  let speed = 1;
   let finished = false;
+  let speed = 8;   // runs start fast-forwarded; the button cycles round to 1x
   let stepClock = 0;
   let slots = [new Map(), new Map(), new Map()];
 
   function leaderTarget(pasture) {
     return pasture.grassFraction() >= CONFIG.greenThreshold ? CONFIG.greenCows : CONFIG.brownCows;
+  }
+
+  // The greedy pasture starves its herd out and then, with nothing eating it,
+  // grows back. These are the thresholds at which each greedy shepherd turns
+  // its cows out again: `restockAt` handed out least-greedy-first, so the
+  // shepherd running the smallest herd is back at 50% grass and the biggest
+  // waits for 80%. Derived from personalTop rather than written down, so it
+  // survives a change to Project 01's utility table (ties broken by index).
+  const restockThreshold = [];
+  CONFIG.personalTop
+    .map((n, i) => ({ i, n }))
+    .sort((a, b) => a.n - b.n || a.i - b.i)
+    .forEach((entry, rank) => { restockThreshold[entry.i] = CONFIG.restockAt[rank]; });
+
+  // A greedy shepherd is "out" only once every one of its cows has starved —
+  // it never destocks by choice, which is the whole point of the pasture.
+  function restockGreedy(pasture) {
+    const grass = pasture.grassFraction();
+    const alive = [0, 0, 0, 0];
+    pasture.herd.forEach((cow) => { alive[cow.shepherd]++; });
+    CONFIG.personalTop.forEach((n, i) => {
+      if (alive[i] === 0 && grass >= restockThreshold[i]) pasture.setShepherdCount(i, n);
+    });
   }
 
   function spawn() {
@@ -90,14 +119,14 @@
     models = [greedy, fixed, leader];
 
     scene.panels.forEach((panel) => panel.clearCows());
-    scene.setHorizon(CONFIG.horizon);
+    scene.setHorizon(CONFIG.chartSpan);
     scene.resetChart();
     assignSlots(true);
     sync();
     drawCows(1);
     scene.pushSample(0, [0, 0, 0]);
     scene.drawChart();
-    if (verdictEl) verdictEl.textContent = "";
+    showStanding();
     setPlaying(playing);
   }
 
@@ -141,7 +170,15 @@
 
   // ---- One time step -----------------------------------------------------
   function step() {
+    // The loop already stops calling this at the horizon, since setPlaying(false)
+    // fires there — but a hand-driven step (the console, a harness) would run
+    // straight past the end and leave the standing quoting a step that never
+    // happened. Cheaper to make the end of the run mean it.
+    if (finished) return;
+
     const leaderModel = models[2];
+
+    restockGreedy(models[0]);
 
     // Followers join on schedule, whether or not this is a reconsider step —
     // the moment they join they immediately mirror the leader's last choice.
@@ -165,19 +202,20 @@
     assignSlots(false);
     sync();
 
-    if (steps % CONFIG.sampleEvery === 0 || steps === CONFIG.horizon) {
+    if (steps % CONFIG.sampleEvery === 0) {
       scene.pushSample(steps, models.map((m) => m.eaten));
       scene.drawChart();
     }
 
     if (steps >= CONFIG.horizon) {
       finished = true;
-      showVerdict();
       setPlaying(false);
     }
+    showStanding();
   }
 
   function sync() {
+    scene.setStarved(models.map((m) => m.starved));
     models.forEach((model, i) => {
       const panel = scene.panels[i];
       panel.paintGrass(model.levels);
@@ -186,16 +224,38 @@
     });
   }
 
-  function showVerdict() {
+  // The run never ends, so the line under the card is a running scoreboard
+  // rather than a verdict: who is ahead right now, and by how much over the
+  // runner-up. Recomputed from the models every step, so it can never claim
+  // an outcome the pastures did not produce.
+  const num = (n) => n.toLocaleString();
+
+  function showStanding() {
     if (!verdictEl) return;
     const eaten = models.map((m) => m.eaten);
-    const winner = eaten.indexOf(Math.max(...eaten));
-    const others = eaten.filter((_, i) => i !== winner);
-    const gain = Math.round((eaten[winner] / Math.max(...others) - 1) * 100);
+    const tally = `greedy ${num(eaten[0])} · fixed ${num(eaten[1])} · leader ${num(eaten[2])}`;
+    const when = finished ? `After ${num(CONFIG.horizon)} steps` : `Step ${num(steps)}`;
+    const best = Math.max(...eaten);
+    if (best === 0) {
+      verdictEl.textContent = `${when} — nothing eaten yet.`;
+      return;
+    }
+    const leaders = eaten.map((v, i) => (v === best ? i : -1)).filter((i) => i >= 0);
+    if (leaders.length > 1) {
+      verdictEl.textContent =
+        `${when} — ${leaders.map((i) => LABELS[i]).join(" and ")} level (${tally}).`;
+      return;
+    }
+    const winner = leaders[0];
+    const runnerUp = eaten
+      .map((v, i) => ({ v, i }))
+      .filter((e) => e.i !== winner)
+      .sort((a, b) => b.v - a.v)[0];
+    const gain = runnerUp.v > 0 ? Math.round((best / runnerUp.v - 1) * 100) : null;
     verdictEl.textContent =
-      `After ${CONFIG.horizon} steps, ${LABELS[winner]} harvested ${eaten[winner]} ` +
-      `(greedy ${eaten[0]}, fixed ${eaten[1]}, leader ${eaten[2]})` +
-      (gain > 0 ? ` — ${gain}% ahead of the runner-up.` : ".");
+      `${when} — ${LABELS[winner]} ${finished ? "wins" : "leads"}` +
+      (gain === null || gain === 0 ? "" : `, ${gain}% ahead of ${LABELS[runnerUp.i]}`) +
+      ` (${tally}).`;
   }
 
   // ---- Drawing -----------------------------------------------------------
@@ -282,7 +342,7 @@
     ffBtn.addEventListener("click", () => {
       setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]);
     });
-    setSpeed(1);
+    setSpeed(8);
   }
 
   function togglePlay() {
@@ -299,12 +359,24 @@
     if (!helpDialog) return;
     helpDialog.querySelectorAll("[data-cfg]").forEach((el) => {
       const v = CONFIG[el.dataset.cfg];
-      el.textContent = Array.isArray(v) ? v.join(" / ") : String(v);
+      // Thousands get a separator so the popup's horizon matches the standing
+      // line under the card, which is written with toLocaleString.
+      el.textContent = Array.isArray(v) ? v.join(" / ")
+        : typeof v === "number" && v >= 10000 ? v.toLocaleString()
+        : String(v);
     });
     const derived = {
       greenPct: Math.round(CONFIG.greenThreshold * 100) + "%",
       leaderLabel: "shepherd " + (CONFIG.leader + 1),
-      switchSteps: Object.values(CONFIG.switchAt).join(" / ")
+      switchSteps: Object.values(CONFIG.switchAt).join(" / "),
+      // "shepherd 4 (2 cows) at 50%, shepherd 3 (3 cows) at 60%, ..." — read
+      // off the same derivation the sim runs on, so it cannot drift from it.
+      restockList: CONFIG.personalTop
+        .map((n, i) => ({ i, n }))
+        .sort((a, b) => a.n - b.n || a.i - b.i)
+        .map((e, rank) => "shepherd " + (e.i + 1) + " (" + e.n + " cows) at " +
+             Math.round(CONFIG.restockAt[rank] * 100) + "%")
+        .join(", ")
     };
     helpDialog.querySelectorAll("[data-derived]").forEach((el) => {
       el.textContent = derived[el.dataset.derived];

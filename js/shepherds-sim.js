@@ -28,13 +28,23 @@
   // scatters people across all four sizes. In this table three cows actually
   // leads the popular vote (6 shepherds to 5) while two cows takes the welfare
   // sum, 90.2 against 66.1 — the group's best answer is not its loudest one.
+  //
+  // ROW ORDER IS LOAD-BEARING. Project 03 reads the top pick of the first four
+  // rows as its "greedy" pasture (`personalTop` in js/dynamics-sim.js), so
+  // these four have to sum to a herd the pasture cannot carry — otherwise
+  // greedy quietly survives and that section has nothing to show. They are
+  // ordered 4 / 4 / 3 / 2 cows = 13 head against a carrying capacity of 10.
+  // Reordering is safe for everything here: the gossip protocol places agents
+  // at random positions, so nothing in this file depends on which row is
+  // which, and the population-level numbers above are order-invariant.
   const MIXED_VIEWS = [
     { 1: 3.11, 2: 4.76, 3: 3.06, 4: 4.86 },
+    { 1: 3.09, 2: 4.31, 3: 3.18, 4: 5.26 },
+    { 1: 1.99, 2: 4.18, 3: 4.22, 4: 4.05 },
+    { 1: 1.04, 2: 5.55, 3: 2.73, 4: 3.76 },
     { 1: 5.34, 2: 3.94, 3: 4.00, 4: 1.87 },
     { 1: 3.76, 2: 7.43, 3: 2.06, 4: 3.24 },
-    { 1: 1.99, 2: 4.18, 3: 4.22, 4: 4.05 },
     { 1: 4.34, 2: 2.66, 3: 2.13, 4: 3.36 },
-    { 1: 1.04, 2: 5.55, 3: 2.73, 4: 3.76 },
     { 1: 3.27, 2: 4.01, 3: 3.31, 4: 4.89 },
     { 1: 3.32, 2: 4.06, 3: 4.17, 4: 2.26 },
     { 1: 4.99, 2: 4.41, 3: 1.63, 4: 0.42 },
@@ -47,7 +57,6 @@
     { 1: 2.97, 2: 1.97, 3: 3.80, 4: 3.47 },
     { 1: -0.05, 2: 6.73, 3: 2.78, 4: 1.62 },
     { 1: 3.29, 2: 3.68, 3: 5.29, 4: 2.63 },
-    { 1: 3.09, 2: 4.31, 3: 3.18, 4: 5.26 },
     { 1: 3.72, 2: 6.56, 3: 4.13, 4: 2.61 }
   ];
   // Option neglect: three camps whose first choices genuinely differ, around
@@ -263,7 +272,7 @@
     restart: { glyph: "↺", label: "Run the simulation again" }
   };
   const SPEEDS = [1, 3, 8];
-  let speed = 1;
+  let speed = 3;   // runs open at 3x; the button cycles 3x -> 8x -> 1x
   let wantsPlay = false;
 
   function setPlaying(on) {
@@ -354,7 +363,7 @@
 
   reset();
   setPlaying(false);
-  setSpeed(1);
+  setSpeed(3);
   scene.onTick(tick);
 
   // Suspend a running simulation while it is scrolled out of view, and pick it

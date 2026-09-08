@@ -487,7 +487,7 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
 
     <hr class="section-divider" />
 
-    <section class="block reveal" id="project-3">
+    <section class="block reveal project3-layout" id="project-3">
       <div class="kicker">Project 03 · In progress</div>
       <h2>The Dynamics Behind the Norm</h2>
       <div class="section-head">
@@ -505,23 +505,59 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
           All three pastures below run on the same seed and starting grass, so any difference
           between them comes from the herd-size policy alone. <strong>Greedy</strong> fixes every
           shepherd at its own personal-utility-maximizing herd size &mdash; the top pick of the
-          first four shepherds from Project 01 &mdash; and never revisits it. <strong>Fixed</strong>
+          first four shepherds from Project 01. Together that overgrazes the pasture; nobody
+          destocks, and once a shepherd's herd has starved out it simply waits for the grass to
+          come back and turns its cows out again. <strong>Fixed</strong>
           is Project 02's baseline: two cows, every shepherd, always. <strong>Leader</strong> starts
           identically to Greedy, but one shepherd plays an adaptive rule from the start &mdash;
-          three cows once the pasture reads above 80% grass, two otherwise &mdash; and the other
+          three cows once the pasture reads above 70% grass, two otherwise &mdash; and the other
           three switch, one by one, to mirror whatever that shepherd is currently doing. The chart
           tracks cumulative grass eaten across all three, the same metric Project 02 used.
         </p>
       </div>
+
+      <aside class="policy-key card">
+        <h3 class="policy-key-title">The three policies</h3>
+        <ul class="policy-key-list">
+          <li>
+            <span class="policy-key-rule" style="background: var(--opt-1)"></span>
+            <b>Greedy</b>
+            <span class="policy-key-desc">Everyone plays their own top pick</span>
+          </li>
+          <li>
+            <span class="policy-key-rule" style="background: var(--opt-2)"></span>
+            <b>Fixed</b>
+            <span class="policy-key-desc">Two cows, every shepherd</span>
+          </li>
+          <li>
+            <span class="policy-key-rule" style="background: var(--opt-3)"></span>
+            <b>Leader</b>
+            <span class="policy-key-desc">Follow the highest-reputation behavior</span>
+          </li>
+        </ul>
+
+        <h3 class="policy-key-title policy-key-title--metric">What the chart measures</h3>
+        <p class="policy-key-metric">
+          <strong>Cumulative grass eaten</strong> &mdash; every mouthful taken by every cow,
+          added up over the run.
+        </p>
+        <svg class="metric-cycle-svg" viewBox="0 0 300 254" role="img"
+             aria-labelledby="metricCycleTitle metricCycleDesc">
+          <title id="metricCycleTitle">One mouthful, counted</title>
+          <desc id="metricCycleDesc">Four frames in a clockwise loop. A full green tile; a cow
+            walks onto it; the cow grazes and the tile fades to a paler green as a plus one
+            counts the mouthful; the cow leaves and the paler tile stays.</desc>
+        </svg>
+      </aside>
 
       <div class="dynamics-visual card">
         <button class="sim-help-btn" id="dynamicsHelpBtn" type="button"
                 aria-label="How the simulations work">?</button>
 
         <div class="dynamics-canvas sim-canvas">
-          <svg class="dynamics-svg" viewBox="0 0 720 512" role="img" aria-labelledby="dynamicsTitle dynamicsDesc">
+          <svg class="dynamics-svg" viewBox="0 0 1190 720" role="img" aria-labelledby="dynamicsTitle dynamicsDesc">
             <title id="dynamicsTitle">Three pastures, three herd-size policies</title>
-            <desc id="dynamicsDesc">Three six-by-six pastures run side by side from the same seed and starting grass. In the first, each of four shepherds is fixed at its own personal-utility-maximizing herd size. In the second, every shepherd is fixed at two cows. In the third, the shepherds start like the first, but one plays an adaptive rule based on the pasture's greenness while the other three switch, one by one, to mirror it. A chart below tracks cumulative grass eaten across all three.</desc>
+            <desc id="dynamicsDesc">Three six-by-six pastures run side by side from the same seed and starting grass. In the first, each of four shepherds runs its own personal-utility-maximizing herd size, which together overgrazes the pasture; once a shepherd's herd has starved out it turns its cows back onto the recovering grass, the smallest herd first. In the second, every shepherd is fixed at two cows. In the third, the shepherds start like the first, but one plays an adaptive rule based on the pasture's greenness while the other three switch, one by one, to mirror it. A chart below tracks cumulative grass eaten across all three.</desc>
           </svg>
 
           <button class="sim-play-btn" id="dynamicsOverlayPlay" type="button"
@@ -531,7 +567,7 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
                   aria-label="Run all three simulations again">&#8634;</button>
         </div>
 
-        <p class="dynamics-verdict" id="dynamicsVerdict" aria-live="polite"></p>
+        <p class="dynamics-verdict" id="dynamicsVerdict"></p>
       </div>
 
       <dialog class="sim-help" id="dynamicsHelp" aria-labelledby="dynamicsHelpTitle">
@@ -546,11 +582,18 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
 
         <h4>Greedy</h4>
         <p>
-          Shepherds one through four are fixed, for the whole run, at their own
-          personal-utility-maximizing herd size &mdash; <b data-cfg="personalTop"></b> cows
-          respectively. These are the top picks of the first four shepherds in Project 01's
-          utility table &mdash; nobody is coordinating, everybody is doing what's individually
-          best for them.
+          Shepherds one through four each run their own personal-utility-maximizing herd size
+          &mdash; <b data-cfg="personalTop"></b> cows respectively. These are the top picks of
+          the first four shepherds in Project 01's utility table &mdash; nobody is coordinating,
+          everybody is doing what's individually best for them. Together that is more stock than
+          the pasture can carry, so the grass goes and the cows starve.
+        </p>
+        <p>
+          Nobody ever destocks by choice. But once a shepherd has lost its whole herd and the
+          empty pasture starts growing back, it turns its cows out again &mdash; the smallest
+          herd first, the largest last, each waiting for the pasture to look good enough to
+          it: <b data-derived="restockList"></b> grass. Each of them is still doing the
+          individually sensible thing, and the pasture just cycles.
         </p>
 
         <h4>Fixed</h4>
@@ -582,7 +625,10 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
           Play and pause sit over the middle pasture, fast forward in the top-right corner and
           restart in the bottom-right; both appear on hover. Restarting deals a fresh seed and
           leaves the run paused. A run lasts <b data-cfg="horizon"></b> steps and then stops on
-          its verdict.
+          its result; while it goes, the line under the card reports who is ahead and by how
+          much. The chart shows the last <b data-cfg="chartSpan"></b> steps: up to that point
+          it fills from zero, and after it the window scrolls, so the left edge is always the
+          current step minus <b data-cfg="chartSpan"></b>.
         </p>
       </dialog>
     </section>
@@ -601,6 +647,7 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
 <script src="js/shepherds.js"></script>
 <script src="js/shepherds-sim.js"></script>
 <script src="js/leader-emergence.js"></script>
+<script src="js/eaten-metric.js"></script>
 <!-- js/norms.js, js/norms-sim.js are still set aside with the Project 02
      visual — see archive/project2-norms-visual.html. js/pasture-model.js is
      back in use though: Project 03's three pastures run on it too. -->

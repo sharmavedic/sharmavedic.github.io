@@ -39,12 +39,15 @@
   --shepherds-pad: 22px;
   --shepherds-card: calc(480px + 2 * var(--shepherds-pad) + 2px);
   --shepherds-col: calc(var(--shepherds-card) + 66px);
-  /* Project 03's card: three 220px-wide pastures side by side (720px total)
-     plus the harvest chart under all three. Stands alone at the bottom of its
-     section rather than beside prose, so it doesn't need to match another
-     card's width the way the pairs above do. */
+  /* Project 03's card: three pastures side by side plus the harvest chart
+     under all three. It stands alone at the bottom of its section rather than
+     beside prose, and it spans the full page measure — the same width the
+     earlier sections cover with prose column + card column together. Derived
+     from --max-width and .container's 24px side padding so the two cannot
+     drift; the drawing inside is (card - 2*pad - 2px border) = 1190 wide,
+     which is the dynamics-svg viewBox width. */
   --dynamics-pad: 20px;
-  --dynamics-card: calc(720px + 2 * var(--dynamics-pad) + 2px);
+  --dynamics-card: calc(var(--max-width) - 48px);
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
   /* Pasture palette: bare (grazed-out) -> lush grass */
@@ -732,7 +735,7 @@ footer {
 .commons-slider:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .commons-readout {
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   color: var(--text-muted);
   margin-bottom: 18px;
   font-variant-numeric: tabular-nums;
@@ -754,13 +757,13 @@ footer {
   position: absolute;
   top: 10px;
   right: 12px;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--bg-alt);
   color: var(--text-muted);
-  font: 600 0.78rem/1 var(--font-sans);
+  font: 600 0.95rem/1 var(--font-sans);
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -943,7 +946,7 @@ footer {
 }
 
 .sim-ff-btn[data-speed]:not([data-speed="1"]) {
-  font-size: 0.76rem;
+  font-size: 0.95rem;
   font-weight: 700;
   padding-bottom: 0;
 }
@@ -1026,7 +1029,7 @@ footer {
 }
 
 .commons-stat-label {
-  font-size: 0.72rem;
+  font-size: 0.95rem;
   color: var(--text-muted);
   text-align: center;
   max-width: 12ch;
@@ -1302,7 +1305,7 @@ footer {
   background: var(--bg-alt);
   color: var(--text-muted);
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   font-family: inherit;
   cursor: pointer;
   transition: border-color 0.18s ease, color 0.18s ease;
@@ -1379,6 +1382,10 @@ footer {
   box-shadow: var(--shadow);
 }
 
+/* Same as the other sim cards: a drawing that lifts under the cursor reads
+   as the simulation moving, so the generic `.card:hover` nudge is cancelled. */
+.leader-steps:hover { transform: none; }
+
 .leader-step {
   width: 100%;
   max-width: 220px;
@@ -1391,7 +1398,7 @@ footer {
 .leader-step + .leader-step { border-top: 1px solid var(--border); }
 
 .leader-step-label {
-  font-size: 0.72rem;
+  font-size: 0.95rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1477,6 +1484,131 @@ footer {
 }
 
 /* ===== Project 03: three-pasture dynamics ===== */
+/* Same three-row grid as the other sections, so the prose sits in a ~600px
+   column with a card beside it rather than running the full 1232px measure
+   (~171 characters a line, against ~80 everywhere else). The difference is
+   the last row: the simulation card spans BOTH columns, because three
+   pastures side by side need the whole page width. */
+.project3-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--norms-col);
+  grid-template-rows: auto auto 1fr;
+  column-gap: 40px;
+  align-items: start;
+}
+
+.project3-layout > .kicker { grid-column: 1; grid-row: 1; }
+.project3-layout > h2 { grid-column: 1; grid-row: 2; margin-bottom: 10px; }
+.project3-layout > .section-head { grid-column: 1; grid-row: 3; }
+.project3-layout > .section-head > p:first-child { margin-top: 0; }
+
+/* Aligned to the heading and nudged down, matching Projects 01 and 02, and
+   held to --norms-card so it lines up with their cards down the page. */
+.project3-layout > .policy-key {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  width: 100%;
+  max-width: var(--norms-card);
+  margin: 12px auto 0;
+}
+
+.project3-layout > .dynamics-visual { grid-column: 1 / -1; grid-row: 4; }
+
+.policy-key { padding: 20px 22px 18px; }
+.policy-key:hover { transform: none; }
+
+.policy-key-title {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.policy-key-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+/* The colour chip sits on its own column so the two text lines stay aligned
+   with each other whatever the name's length. */
+.policy-key-list li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 12px;
+  row-gap: 2px;
+}
+
+.policy-key-rule {
+  grid-row: 1;
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  align-self: center;
+}
+
+.policy-key-list b { grid-column: 2; font-size: 0.95rem; }
+
+.policy-key-desc {
+  grid-column: 2;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.policy-key-note {
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+/* Second block in the same card: what the chart plots, and why that number is
+   the one worth plotting. */
+.policy-key-title--metric {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.policy-key-metric {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.policy-key-metric:last-child { margin-bottom: 0; }
+.policy-key-metric strong { color: var(--text); font-weight: 600; }
+
+/* The 2x2 loop that replaced the paragraphs (js/eaten-metric.js). Capped at its
+   viewBox width so it never renders above 1:1 — the "+1" and its label are
+   sized in user units, and scaling the drawing up would scale them past the
+   card's own type. */
+.metric-cycle-svg {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  display: block;
+  margin: 16px auto 0;
+}
+
+@media (max-width: 900px) {
+  .project3-layout { grid-template-columns: minmax(0, 1fr); }
+  /* Every child named explicitly: a `> *` reset loses to the 0,2,0 base rules
+     above, which would leave `grid-column: 2` alive and conjure an implicit
+     second column. */
+  .project3-layout > .kicker,
+  .project3-layout > h2,
+  .project3-layout > .section-head,
+  .project3-layout > .policy-key,
+  .project3-layout > .dynamics-visual { grid-column: 1; grid-row: auto; min-width: 0; }
+  .project3-layout .section-head { margin-bottom: 32px; }
+  .project3-layout > .policy-key { margin-top: 0; }
+}
+
 .dynamics-visual {
   position: relative;
   margin-top: 30px;
@@ -1486,25 +1618,32 @@ footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 18px var(--dynamics-pad) 16px;
+  padding: 22px var(--dynamics-pad) 20px;
 }
 
+.dynamics-visual:hover { transform: none; }
+
 .dynamics-canvas {
-  width: 720px;
+  width: 1190px;
   max-width: 100%;
   flex: 0 1 auto;
   min-width: 0;
-  /* Play/pause centres on the middle pasture; restart and fast-forward hug
-     the drawing's top-right and bottom-right corners, as on the other cards. */
+  /* Play/pause centres on the middle pasture. Fast-forward and restart stack
+     in the right-hand margin of the third panel, clear of its grid (which ends
+     at x 1110 of 1190) — the bottom-right corner they take on the other cards
+     is inside the chart here, now that the run is open-ended and the plot
+     fills the lower third. */
   --play-x: 50%;
-  --play-y: 28%;
+  --play-y: 31%;
   --corner-x: 96%;
-  --ff-y: 4%;
-  --restart-y: 92%;
+  /* Below the panel subtitle, which at the 15.2px type floor reaches almost to
+     the third panel's right edge — at 5% the buttons sat on top of it. */
+  --ff-y: 18%;
+  --restart-y: 27%;
 }
 
 .dynamics-svg {
-  width: 720px;
+  width: 1190px;
   max-width: 100%;
   flex: none;
   height: auto;
@@ -1515,7 +1654,7 @@ footer {
 
 .dynamics-verdict {
   width: 100%;
-  margin: 10px 0 0;
+  margin: 18px 0 0;
   min-height: 2.6em;
   font-size: 0.86rem;
   line-height: 1.4;
@@ -1523,6 +1662,8 @@ footer {
   text-align: center;
 }
 
-@media (max-width: 760px) {
+/* Below the card's own width there is nothing to centre — go fluid and let the
+   viewBox scale, rather than overflowing the container. */
+@media (max-width: 1280px) {
   .dynamics-canvas, .dynamics-svg { width: 100%; }
 }

@@ -33,7 +33,7 @@
     moveValue: 0.75,
     temperature: 0.08,
     moveBias: 2.5,
-    regrowPerNeighbour: 0.011,
+    regrowPerNeighbour: 0.015,
     regrowBase: 0,           // seed-bank: chance a tile gains a level with no
                              // green neighbour at all. At 0 a flattened pasture
                              // is dead for good, which is simulation 1's whole

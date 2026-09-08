@@ -54,7 +54,7 @@
   let season = 0;
   let steps = 0;
   let playing = false;
-  let speed = 1;
+  let speed = 8;   // runs start fast-forwarded; the button cycles round to 1x
   let finished = false;
   let stepClock = 0;
   let slots = [new Map(), new Map()];   // cow id -> { slot, count, fromSlot, fromCount }
@@ -272,7 +272,7 @@
     ffBtn.addEventListener("click", () => {
       setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]);
     });
-    setSpeed(1);
+    setSpeed(8);
   }
 
   function togglePlay() {
