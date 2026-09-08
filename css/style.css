@@ -554,6 +554,24 @@ table.teach td.hours { color: var(--primary); font-weight: 600; white-space: now
 .contact-card h3 { font-size: 1rem; margin-bottom: 6px; }
 .contact-card a.value { color: var(--primary); font-weight: 600; word-break: break-word; }
 
+/* Brand logos (LinkedIn, Google Scholar, ResearchGate) sit in the same tinted
+   circle as the emoji icons, sized down to fit. Their fill is the brand's own
+   colour, baked into the path — like the pasture's shepherd colours, a logo's
+   identity shouldn't shift with the site's theme. */
+.contact-card .icon.brand-icon svg { width: 24px; height: 24px; display: block; }
+
+/* A second heading inside the same section, introducing the social/resource
+   links below the primary Email/Location grid — same treatment as a prose
+   sub-heading (.section-head h3) but placed directly in the section, so it
+   needs its own rule rather than that scoped selector. */
+.contact-subhead {
+  font-family: var(--font-serif);
+  font-size: 1.12rem;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 40px 0 8px;
+}
+
 /* ===== Footer ===== */
 footer {
   border-top: 1px solid var(--border);
