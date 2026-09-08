@@ -371,7 +371,8 @@ section.block + section.block { border-top: 1px solid var(--border); }
 }
 
 .section-head h2,
-.problem-layout > h2 {
+.problem-layout > h2,
+.contact-category-head {
   font-family: var(--font-serif);
   font-size: clamp(1.5rem, 3vw, 2rem);
   letter-spacing: -0.01em;
@@ -526,9 +527,14 @@ table.teach td.code { color: var(--text-muted); font-variant-numeric: tabular-nu
 table.teach td.hours { color: var(--primary); font-weight: 600; white-space: nowrap; }
 
 /* ===== Contact ===== */
+/* auto-fill, not auto-fit: a category with fewer cards (CV's grid holds just
+   one) still gets tracks sized the same as a fuller grid above it — auto-fit
+   would collapse the empty tracks and let the lone card stretch to fill the
+   row, which is the one thing "same size boxes across all of them" rules
+   out. auto-fill leaves the extra tracks in place, just empty. */
 .contact-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 18px;
   margin-top: 8px;
 }
@@ -560,17 +566,12 @@ table.teach td.hours { color: var(--primary); font-weight: 600; white-space: now
    identity shouldn't shift with the site's theme. */
 .contact-card .icon.brand-icon svg { width: 24px; height: 24px; display: block; }
 
-/* A second heading inside the same section, introducing the social/resource
-   links below the primary Email/Location grid — same treatment as a prose
-   sub-heading (.section-head h3) but placed directly in the section, so it
-   needs its own rule rather than that scoped selector. */
-.contact-subhead {
-  font-family: var(--font-serif);
-  font-size: 1.12rem;
-  letter-spacing: -0.01em;
-  color: var(--text);
-  margin: 40px 0 8px;
-}
+/* Category headings within the same section — Socials, CV — each introducing
+   their own grid below the primary Email/Location one. Sized to match "Let's
+   talk" exactly (added to that h2 rule below) rather than the smaller prose
+   sub-heading treatment, since these read as their own categories, not
+   sub-points under the intro paragraph. */
+.contact-category-head { margin: 40px 0 8px; }
 
 /* ===== Footer ===== */
 footer {
