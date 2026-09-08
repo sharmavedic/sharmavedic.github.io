@@ -1583,13 +1583,13 @@ footer {
 .policy-key-metric:last-child { margin-bottom: 0; }
 .policy-key-metric strong { color: var(--text); font-weight: 600; }
 
-/* The 2x2 loop that replaced the paragraphs (js/eaten-metric.js). Capped at its
-   viewBox width so it never renders above 1:1 — the "+1" and its label are
-   sized in user units, and scaling the drawing up would scale them past the
-   card's own type. */
+/* The looping cow/tile animation that replaced the paragraphs
+   (js/eaten-metric.js). Capped at its viewBox width so it never renders
+   above 1:1 — the "+1" and its label are sized in user units, and scaling
+   the drawing up would scale them past the card's own type. */
 .metric-cycle-svg {
   width: 100%;
-  max-width: 300px;
+  max-width: 220px;
   height: auto;
   display: block;
   margin: 16px auto 0;
