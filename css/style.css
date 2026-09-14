@@ -40,14 +40,16 @@
   --shepherds-card: calc(480px + 2 * var(--shepherds-pad) + 2px);
   --shepherds-col: calc(var(--shepherds-card) + 66px);
   /* Project 03's card: three pastures side by side plus the harvest chart
-     under all three. It stands alone at the bottom of its section rather than
-     beside prose, and it spans the full page measure — the same width the
-     earlier sections cover with prose column + card column together. Derived
-     from --max-width and .container's 24px side padding so the two cannot
-     drift; the drawing inside is (card - 2*pad - 2px border) = 1190 wide,
-     which is the dynamics-svg viewBox width. */
+     under all three. Sized from its drawing, like every other card — the
+     viewBox is 1000 wide, so the card is 1000 + padding + border. It used to
+     be derived from --max-width instead (the full 1232px page measure), which
+     made it both wider than it needed to be and impossible to centre on the
+     content above it. */
   --dynamics-pad: 20px;
-  --dynamics-card: calc(var(--max-width) - 48px);
+  --dynamics-card: calc(1000px + 2 * var(--dynamics-pad) + 2px);
+  /* The key card is centred in its own column, so the prose + key block above
+     stops this far short of the grid's right edge. */
+  --key-slack: calc((var(--norms-col) - var(--norms-card)) / 2);
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
   /* Pasture palette: bare (grazed-out) -> lush grass */
@@ -64,6 +66,11 @@
      surfaces, so unlike --opt-2/3 they need no dark-mode step. */
   --norm-fixed: #e05a8a;
   --norm-adaptive: #6366f1;
+  /* Semantic alarm colour, for the one word in a tagline that carries the
+     outcome. Deliberately NOT --opt-4: that pink is a series colour (shepherd
+     4's cloak, the fixed norm), and text must never borrow one. 6.47:1 on the
+     light card, 6.12:1 on the dark one — both clear the muted text it sits in. */
+  --danger: #b91c1c;
 }
 
 :root[data-theme="dark"] {
@@ -94,6 +101,8 @@
      surfaces, so unlike --opt-2/3 they need no dark-mode step. */
   --norm-fixed: #e05a8a;
   --norm-adaptive: #6366f1;
+  /* Steps up in dark mode: #b91c1c is far below the dark lightness band. */
+  --danger: #f87171;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -125,6 +134,8 @@
        surfaces, so unlike --opt-2/3 they need no dark-mode step. */
     --norm-fixed: #e05a8a;
     --norm-adaptive: #6366f1;
+    /* Steps up in dark mode: #b91c1c is far below the dark lightness band. */
+    --danger: #f87171;
   }
 }
 
@@ -369,6 +380,19 @@ section.block + section.block { border-top: 1px solid var(--border); }
   letter-spacing: 0.08em;
   margin-bottom: 8px;
 }
+/* The venue in a kicker can link out to where the paper is listed. The kicker
+   is already --primary, so colour cannot be the affordance the way it is
+   elsewhere; the underline is. Kept at 45% so a line of uppercase tracking
+   does not turn into a solid rule under the text. */
+.kicker a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s ease;
+}
+.kicker a:hover,
+.kicker a:focus-visible { text-decoration-color: currentColor; }
 
 .section-head h2,
 .problem-layout > h2,
@@ -381,6 +405,88 @@ section.block + section.block { border-top: 1px solid var(--border); }
 
 .section-head p { color: var(--text-muted); margin-top: 10px; max-width: 60ch; }
 
+/* A section's standfirst — the one-line summary under the <h2>. It needs its
+   own rule because `.card p.tagline` further down is scoped to `.card` and so
+   never matches here: a tagline in a .section-head was rendering at the same
+   size, weight and colour as the description below it, which made it read as
+   the description's first line with an unexplained gap underneath. Italic is
+   what separates the two; the 18px below then reads as deliberate. (Adjacent
+   margins collapse, so this has to beat the following paragraph's 10px
+   margin-top rather than add to it.) */
+.section-head p.tagline {
+  font-style: italic;
+  margin-top: 0;
+  margin-bottom: 18px;
+}
+
+/* Project 02's three reward modes. Numbered because they line up one-to-one
+   with Steps 1-3 of the animation beside them — the badge is the link between
+   the prose and the picture, so the reader can match them without being told.
+   Each row is a two-column grid: the badge spans all of the rows so the name,
+   description and formula stay on one left edge. */
+.reward-modes {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  counter-reset: reward;
+  display: grid;
+  gap: 18px;
+  max-width: 60ch;
+}
+.reward-mode {
+  counter-increment: reward;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 2px;
+}
+.reward-mode::before {
+  content: counter(reward);
+  grid-column: 1;
+  grid-row: 1 / -1;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary-tint);
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+/* The three mode names carry the section's colour, matching their badges and
+   the kicker above. No underline: colour plus weight is enough emphasis here,
+   and an underline on coloured bold text read as a link — there are real links
+   in the kicker a few lines up, so the two must not look alike. */
+.reward-name {
+  grid-column: 2;
+  font-weight: 700;
+  color: var(--primary);
+}
+.reward-desc { grid-column: 2; color: var(--text-muted); }
+/* Full-strength text colour here, not the muted body colour — the formulas are
+   the point of the block, and `fill: currentColor` on the SVG means this is
+   what actually paints them. */
+.reward-formula {
+  grid-column: 2;
+  margin-top: 8px;
+  color: var(--text);
+}
+/* No height here on purpose: each formula carries its own, proportional to its
+   natural box, so the glyphs come out the same size across all three. See the
+   note in tools/render-math.py. */
+.reward-formula svg.math { display: block; width: auto; }
+.section-head p.reward-note { margin-top: 16px; font-size: 0.9rem; }
+
+/* The three steps of the story, one per paragraph. This was a single 125-word
+   block with "(Step 1)", "(Step 2)", "(Step 3)" buried mid-sentence, which made
+   the reader hold the whole sequence in their head at once. Splitting it means
+   each step is a unit you can stop at, and the label carries the number instead
+   of a parenthesis. --primary matches the "STEP 1/2/3" headings in the
+   animation beside it, so the two can be read against each other. */
+.section-head p.norm-step { margin-top: 10px; }
+.norm-step-label { color: var(--primary); font-weight: 700; }
+
 /* Sub-headings within a section's prose. */
 .section-head h3 {
   font-family: var(--font-serif);
@@ -391,6 +497,41 @@ section.block + section.block { border-top: 1px solid var(--border); }
 }
 
 .section-head h3 + p { margin-top: 6px; }
+
+/* A heading whose explanation lives behind a "?" instead of in the prose. The
+   button sits inline after the text rather than in a card corner like
+   `.sim-help-btn`, because there is no card here to anchor to — the heading is
+   the anchor. Smaller than the card buttons (22px vs 26px) so it reads as
+   attached to the heading rather than as a control floating beside it. */
+/* The gap is tight on purpose: the heading is phrased as a question, so the
+   button sits close enough to read as the question mark ending it, while still
+   being visibly a control. */
+.h3-with-help {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.prose-help-btn {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  /* Explicit font: the button would otherwise inherit the h3's serif face and
+     1.12rem, which overflows a 22px circle. */
+  font: 700 0.78rem/1 var(--font-sans);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+.prose-help-btn:hover,
+.prose-help-btn:focus-visible {
+  color: var(--primary);
+  border-color: var(--primary);
+}
 
 /* ===== Cards ===== */
 .card-grid { display: grid; gap: 18px; }
@@ -503,7 +644,7 @@ section.block + section.block { border-top: 1px solid var(--border); }
 table.teach {
   width: 100%;
   border-collapse: collapse;
-  min-width: 620px;
+  min-width: 760px;
   background: var(--bg-raised);
 }
 table.teach th, table.teach td {
@@ -525,6 +666,28 @@ table.teach tbody tr:hover { background: var(--primary-tint); }
 table.teach td.course { font-weight: 600; }
 table.teach td.code { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 table.teach td.hours { color: var(--primary); font-weight: 600; white-space: nowrap; }
+table.teach td.instructor { white-space: nowrap; }
+/* Names link out to the instructor's own page. The base rule is
+   `a { color: inherit; text-decoration: none }`, so without this they would be
+   indistinguishable from plain text; the underline is the affordance and the
+   colour only arrives on hover, which keeps a column of eleven links from
+   reading as a wall of blue. */
+table.teach td.instructor a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text-muted) 55%, transparent);
+  text-underline-offset: 3px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+table.teach td.instructor a:hover,
+table.teach td.instructor a:focus-visible {
+  color: var(--primary);
+  text-decoration-color: var(--primary);
+}
+/* An em dash where the instructor isn't recorded yet — muted, so a gap reads as
+   "not filled in" rather than as a name. Unused now that every row has one,
+   kept for the next row added before its instructor is known. */
+table.teach td.instructor .tbd { color: var(--text-muted); opacity: 0.6; }
 
 /* A placeholder line under each course row, for a short description to be
    filled in later. Grouped visually with the row above it: the divider moves
@@ -540,6 +703,38 @@ table.teach td.teach-note {
   font-style: italic;
   color: var(--text-muted);
 }
+/* The note spans all five columns, so without a cap its measure is whatever the
+   table is wide — 142 characters a line at the full page width, against the
+   ~80 the prose columns hold to. `max-width` is ignored on a `table-cell`, so
+   the cap lives on an inner block instead; the cell itself stays full width and
+   keeps its divider running the whole way across. */
+table.teach td.teach-note .teach-note-body {
+  display: block;
+  max-width: 96ch;
+}
+/* A link inside a note has to lift out of it: the note is muted and italic, so
+   a link that inherited both would be invisible as a link. Upright, full-
+   strength text colour, and the same restrained underline the instructor names
+   use — colour only on hover. */
+table.teach td.teach-note a {
+  font-style: normal;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text-muted) 55%, transparent);
+  text-underline-offset: 3px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+table.teach td.teach-note a:hover,
+table.teach td.teach-note a:focus-visible {
+  color: var(--primary);
+  text-decoration-color: var(--primary);
+}
+/* "(private)" after the repo link — the autograder repo really is private
+   (the setup guide says to email for access), so the marker is there to stop a
+   visitor reading GitHub's 404 as a broken link. Upright, so it doesn't read as
+   part of the link text. */
+table.teach td.teach-note .teach-note-flag { font-style: normal; opacity: 0.75; }
+table.teach td.teach-note .sep { padding: 0 7px; opacity: 0.5; }
 
 /* ===== Contact ===== */
 /* auto-fill, not auto-fit: a category with fewer cards (CV's grid holds just
@@ -635,6 +830,14 @@ footer {
   color: var(--text-muted);
   text-align: center;
   margin: 0 0 16px;
+}
+/* The outcome word, carrying the whole tagline. The line is muted and easy to
+   skip; one alarm-coloured word is what stops the eye on it. `strong` in the
+   markup, so the emphasis survives with styles off and is announced rather
+   than being colour-only. */
+.tagline-danger {
+  color: var(--danger);
+  font-weight: 700;
 }
 
 .problem-layout > h2 { margin-bottom: 10px; }
@@ -855,6 +1058,48 @@ footer {
 .sim-help p + p { margin-top: 10px; }
 .sim-help b { color: var(--text); font-variant-numeric: tabular-nums; }
 .sim-help sup { font-size: 0.78em; }
+/* Subscripts carry the agent indices in Project 02's reward definitions. The
+   zero line-height is what keeps them from stretching the rows they sit in —
+   a raised/lowered inline box otherwise grows the line box, which inside the
+   `pre` would break the column alignment the block depends on. */
+.sim-help sub { font-size: 0.78em; line-height: 0; }
+
+/* Project 02's reward definitions. A two-column grid rather than the `pre` the
+   other cards use, because two of the five rows are typeset SVG and three are
+   plain text — inside a `pre` the SVG rows would not share the monospace
+   column and nothing would line up. Labels right-align against the rule the
+   values start on, so the eye reads down one edge. */
+.sim-help .mathblock {
+  margin: 12px 0;
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 12px 16px;
+  align-items: center;
+}
+.sim-help .mathblock dt {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+.sim-help .mathblock dd { margin: 0; }
+.sim-help .mathblock code {
+  font-size: 0.82rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+/* Sized off the surrounding type, so the formulas scale with the dialog rather
+   than being pinned to whatever pt size matplotlib happened to emit. The
+   viewBox does the rest; `fill: currentColor` on the root is what makes one
+   asset serve both themes. */
+.sim-help .mathblock svg.math {
+  display: block;
+  height: 2.6em;
+  width: auto;
+}
 
 .sim-help pre {
   margin: 12px 0;
@@ -1546,7 +1791,21 @@ footer {
   margin: 12px auto 0;
 }
 
-.project3-layout > .dynamics-visual { grid-column: 1 / -1; grid-row: 4; }
+.project3-layout > .dynamics-visual {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  /* Centred on the prose + key block above, not on the container. The block
+     ends --key-slack short of the grid's right edge, so the box this card
+     centres in has to end there too — hence the explicit left margin with the
+     right one left to soak up the remainder. Degrades on its own: once the
+     row is narrower than the card, width collapses to the block's width and
+     the left margin falls to 0, which lines both edges up with the block. */
+  width: min(var(--dynamics-card), 100% - var(--key-slack));
+  max-width: none;
+  margin-left: calc((100% - var(--key-slack)
+                     - min(var(--dynamics-card), 100% - var(--key-slack))) / 2);
+  margin-right: auto;
+}
 
 .policy-key { padding: 20px 22px 18px; }
 .policy-key:hover { transform: none; }
@@ -1638,7 +1897,12 @@ footer {
   .project3-layout > h2,
   .project3-layout > .section-head,
   .project3-layout > .policy-key,
-  .project3-layout > .dynamics-visual { grid-column: 1; grid-row: auto; min-width: 0; }
+  .project3-layout > .dynamics-visual {
+    grid-column: 1; grid-row: auto; min-width: 0;
+    width: 100%;
+    max-width: var(--dynamics-card);
+    margin-inline: auto;
+  }
   .project3-layout .section-head { margin-bottom: 32px; }
   .project3-layout > .policy-key { margin-top: 0; }
 }
@@ -1658,18 +1922,17 @@ footer {
 .dynamics-visual:hover { transform: none; }
 
 .dynamics-canvas {
-  width: 1190px;
+  width: 1000px;
   max-width: 100%;
   flex: 0 1 auto;
   min-width: 0;
   /* Play/pause centres on the middle pasture. Fast-forward and restart stack
      in the right-hand margin of the third panel, clear of its grid (which ends
-     at x 1110 of 1190) — the bottom-right corner they take on the other cards
-     is inside the chart here, now that the run is open-ended and the plot
-     fills the lower third. */
+     at x 952 of 1000) — the bottom-right corner they take on the other cards
+     is inside the chart here, since the plot fills the lower third. */
   --play-x: 50%;
   --play-y: 31%;
-  --corner-x: 96%;
+  --corner-x: 97.6%;
   /* Below the panel subtitle, which at the 15.2px type floor reaches almost to
      the third panel's right edge — at 5% the buttons sat on top of it. */
   --ff-y: 18%;
@@ -1677,7 +1940,7 @@ footer {
 }
 
 .dynamics-svg {
-  width: 1190px;
+  width: 1000px;
   max-width: 100%;
   flex: none;
   height: auto;
@@ -1697,7 +1960,8 @@ footer {
 }
 
 /* Below the card's own width there is nothing to centre — go fluid and let the
-   viewBox scale, rather than overflowing the container. */
-@media (max-width: 1280px) {
+   viewBox scale, rather than overflowing the container. The card stops being
+   able to hold its full 1000-wide drawing at about a 1125px viewport. */
+@media (max-width: 1130px) {
   .dynamics-canvas, .dynamics-svg { width: 100%; }
 }

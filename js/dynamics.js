@@ -27,9 +27,13 @@
   // else.
   const N = 6, LEVELS = 6, TILE = 40;
   const GRID = N * TILE;                    // 240
-  const W = 1190, H = 720;
-  const PANEL_W = 380;
-  const PANEL_X = [10, 405, 800];           // panel left edges, 15 apart
+  const W = 1000, H = 720;
+  // 380 was wider than anything in a panel needed: the widest thing a panel has
+  // to hold is its subtitle, and "Follow the highest-reputation behaviour" is
+  // 295px at the 15.2px type floor. 316 gives that ~10px either side, and the
+  // 190 units saved come straight off the card's width.
+  const PANEL_W = 316;
+  const PANEL_X = [10, 342, 674];           // panel left edges, 16 apart
   const PANEL_TOP = 8;
   const GRID_Y = PANEL_TOP + 96;            // room above for title/subtitle/shepherds.
                                             // Was 58 at the old type sizes and 70
@@ -41,9 +45,13 @@
                                             // next's.
   const COW_SCALE = 0.49;                   // 0.32 was tuned to TILE 26
   const SHEPHERD_SCALE = 0.42;
-  const CHART = { left: 76, right: 700, top: 470, bottom: 646 };
+  const STAT_PITCH = 86;                    // centre-to-centre of the three readouts
+                                            // under a pasture; the widest value is
+                                            // ~56 units, so they clear by ~30
+  const CHART = { left: 76, right: 580, top: 470, bottom: 646 };
   // The stats block fills the width the plot gave up, to the right of a rule.
-  const SIDE = { rule: 748, left: 772, right: 1180, top: CHART.top };
+  // Its floor is the note along the bottom, 336px at 15.2 — hence 346 of width.
+  const SIDE = { rule: 620, left: 644, right: 990, top: CHART.top };
 
   const HERD_COLORS = window.ShepherdSprite.HERDS;
   const ACCENT_VARS = ["--opt-1", "--opt-2", "--opt-3"];
@@ -150,7 +158,7 @@
     // One compact stat row under the grid: grass% · head · eaten.
     const statsY = GRID_Y + GRID + 32;
     const stats = STAT_KEYS.map((key, i) => {
-      const cx = x0 + PANEL_W * (i + 0.5) / 3;
+      const cx = x0 + PANEL_W / 2 + (i - 1) * STAT_PITCH;
       const value = el("text", {
         x: cx, y: statsY, "text-anchor": "middle", "font-size": "16",
         "font-weight": "600", fill: "var(--text)"
@@ -216,7 +224,7 @@
   const panels = [
     makePanel(0, "Greedy", "Everyone plays their own top pick"),
     makePanel(1, "Fixed", "Two cows, every shepherd"),
-    makePanel(2, "Leader", "Follow the highest-reputation behavior")
+    makePanel(2, "Leader", "Follow the highest-reputation behaviour")
   ];
 
   // The chart is a fixed-width window onto an endless run: it always shows
@@ -312,7 +320,7 @@
   sideTitle.textContent = `Last ${START_SPAN} steps`;
   sideGroup.appendChild(sideTitle);
 
-  const RATE_X = SIDE.right - 130, STARVED_X = SIDE.right;
+  const RATE_X = SIDE.right - 128, STARVED_X = SIDE.right;
   [[RATE_X, "eaten / 100 steps"], [STARVED_X, "starved"]].forEach(([x, label]) => {
     const t = el("text", {
       x, y: SIDE.top + 20, "text-anchor": "end", "font-size": "15.2",

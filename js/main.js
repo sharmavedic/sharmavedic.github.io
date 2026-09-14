@@ -53,5 +53,22 @@
     } else {
       revealEls.forEach((el) => el.classList.add("in"));
     }
+
+    // "?" buttons that sit in the prose rather than on a card. The card popups
+    // are wired in their own sim files, because those fill CONFIG numbers in
+    // before opening; these carry static text, so one generic pass does it.
+    // Convention: a button with id "fooBtn" opens the dialog with id "foo".
+    document.querySelectorAll(".prose-help-btn").forEach((btn) => {
+      const dialog = document.getElementById(btn.id.replace(/Btn$/, ""));
+      if (!dialog) return;
+      btn.addEventListener("click", () => dialog.showModal());
+      const close = document.getElementById(btn.id.replace(/Btn$/, "") + "Close");
+      if (close) close.addEventListener("click", () => dialog.close());
+      // The dialog fills its own box, so a click landing on the element itself
+      // came from the backdrop — same rule the card popups use.
+      dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) dialog.close();
+      });
+    });
   });
 })();

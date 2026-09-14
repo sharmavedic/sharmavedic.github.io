@@ -72,7 +72,7 @@
         <p>
           My work introduces an additional reward mechanism called <strong>social reward</strong>. This,
           alongside personal utility, lets a group of self-interested
-          agents organically produce a <strong>leader</strong>, which steers the collective behavior
+          agents organically produce a <strong>leader</strong>, which steers the collective behaviour
           toward socially optimal outcomes, avoiding the tragedy.
         </p>
       </div>
@@ -80,8 +80,8 @@
       <div class="commons-visual card">
         <button class="sim-help-btn" id="commonsHelpBtn" type="button"
                 aria-label="How the simulation works">?</button>
-        <h3 class="commons-visual-title">Shepherds grazing cows</h3>
-        <p class="commons-visual-tagline">The pasture goes bare due to overgrazing</p>
+        <h3 class="commons-visual-title">Cows grazing a pasture</h3>
+        <p class="commons-visual-tagline">The pasture goes <strong class="tagline-danger">barren</strong> due to overgrazing</p>
 
         <div class="commons-stats">
           <div class="commons-stat">
@@ -136,7 +136,7 @@
           Cows are turned out on random tiles with <b data-cfg="energyStart"></b> energy.
         </p>
         <p>
-          With 3-4 cows each, the pasture eventually dies and no food remains for the herd &mdash;
+          With 3-4 cows each, the pasture is eventually grazed barren and no food remains for the herd &mdash;
           the tragedy playing out in real time. With 1-2 cows, each shepherd can enjoy the pasture's
           benefits indefinitely.
         </p>
@@ -200,35 +200,36 @@ P(eat)  = 1 / (1 + e^((Q(move) &minus; Q(eat)) / <b data-cfg="temperature"></b>)
     <hr class="section-divider" />
 
     <section class="block reveal project-layout" id="project-1">
-      <div class="kicker">Project 01 · Extended Abstract, AAMAS 2026</div>
+      <div class="kicker">Project 01 · <a href="https://cyprusconferences.org/aamas2026/accepted-research-track/" target="_blank" rel="noopener">AAMAS 2026 - Extended Abstract</a> </div>
       <h2>Low Message-Cost Gossip for Welfare-Optimal Decentralized Decision Making</h2>
       <div class="section-head">
-        <p class="tagline">with Prof. Peter Marbach · Paphos, Cyprus</p>
         <p>
           Now take those herders and multiply them. Shepherds across the whole region graze their
-          own pastures, and years of experience have taught each of them roughly what a pasture can
-          carry — one cow is safe but wasteful, four strips it bare. Their views differ because
-          their perspective differs: some prioritize gains over higher chance of stripping pasture, while others are more cautious prioritizing long term pasture health over potential gains. No central authority
-          collects those opinions and averages them. But the shepherds do talk to each other.
+          own pastures, and each has formed its own view of what one can carry — some accept a
+          higher risk of stripping the pasture in exchange for bigger gains, others put long-term
+          health first. No central authority collects those opinions. Instead, the shepherds talk
+          to each other and reach a consensus on their own.
         </p>
 
         <h3>Sharing a favourite is enough</h3>
         <p>
           The naive fix is to have every agent broadcast its full ranking — but that gets expensive
-          fast as the number of options grows. This work shows you don't need to: a gossip protocol
-          where each agent shares only its current favorite option (or top few) is enough to
-          provably converge on the option that maximizes total welfare across the group — even if
-          that option starts out as nobody's favorite, a scenario we call
-          <strong>option neglect</strong>.
+          fast as the number of agents and options grows. Our work shows you don't need to: we
+          propose a new gossip protocol in which each agent shares only its current favourite
+          option, and prove that this alone converges on the option that maximizes total
+          welfare across the group. Even in the case of <strong>option neglect</strong>, where no
+          agent has the optimal option as their favourite, agents reach consensus on it.
         </p>
 
-        <h3>More choices, less chatter</h3>
+        <h3>More choices can lead to faster consensus</h3>
         <p>
-          The most surprising part: in settings where one option is a clear standout — a common
+          We show that the total communication complexity is bounded above by a function of the
+          <strong>mean separation</strong> (the difference in mean social welfare between the two
+          best options) and the <strong>effective competition</strong> (how many opinions compete
+          with those of the optimal option).
+          The surprising part: where options grow increasingly spread out in welfare — a common
           pattern in swarm coordination and decentralized marketplaces — the protocol needs
-          <strong>less</strong> communication as the number of options grows. The shepherds are one
-          instance; the same structure turns up wherever agents hold private opinions and no server
-          is there to poll them.
+          <strong>less</strong> communication as the number of options grows. 
         </p>
       </div>
 
@@ -241,7 +242,7 @@ P(eat)  = 1 / (1 + e^((Q(move) &minus; Q(eat)) / <b data-cfg="temperature"></b>)
         <div class="shepherds-canvas sim-canvas">
           <svg class="shepherds-svg" viewBox="0 0 480 280" role="img" aria-labelledby="shepherdsTitle shepherdsDesc">
             <title id="shepherdsTitle">Shepherds from many pastures, mingling</title>
-            <desc id="shepherdsDesc">Twenty shepherds drift around a box, each coloured by the herd size — one, two, three or four cows — its own estimates currently rank highest. When two of them pass close by they exchange the option each rates best and average their estimates of it, and over many such interactions the whole population converges on two cows, the size that maximises welfare across the group.</desc>
+            <desc id="shepherdsDesc">Twenty shepherds drift around a box, each coloured by the herd size — one, two, three or four cows — its own estimates currently rank highest. When two of them pass close by they exchange the option each rates best and average their estimates of it, and over many such interactions the whole population converges on two cows, the size that maximizes welfare across the group.</desc>
           </svg>
 
           <button class="sim-play-btn" id="shepherdsPlay" type="button"
@@ -321,7 +322,7 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
         <p>
           <b>Option neglect</b> splits them into camps that genuinely disagree: eight swear by one
           cow, eight by three, four by four. Two cows is everybody's second choice and
-          <em>nobody's</em> first, so it starts with zero support &mdash; yet it still maximises
+          <em>nobody's</em> first, so it starts with zero support &mdash; yet it still maximizes
           welfare. It gets found because the popular answers deflate toward their true means until
           the neglected one floats to the top.
         </p>
@@ -351,33 +352,921 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
 
     <section class="block reveal project2-layout" id="project-2">
       <div class="kicker">Project 02 · Pending Review</div>
-      <h2>Learning Norms Through Emulation and Prestige</h2>
+      <h2>Emergence of Welfare-Optimal Norms Through Emulation and Prestige</h2>
       <div class="section-head">
-        <p class="tagline">Three reward types, one welfare-optimal norm &mdash; without a single vote</p>
         <p>
-          Shepherds don't only care about their own cows. This project gives every agent three
-          possible reward types, only one of which is active at a time. <strong>Personal
-          utility</strong> is the ordinary payoff of one's own behavior. <strong>Emulation</strong>
-          rewards copying someone else's behavior, in proportion to that behavior's
-          <strong>reputation</strong> &mdash; how much welfare it generates for the group.
-          <strong>Prestige</strong> rewards the agent being copied, in proportion to the total
-          benefit its behavior provides everyone now following it.
+          This project sets out the reward structure formally. Take a group of <em>N</em> agents,
+          <b>A</b> = {1, &hellip;, N}. Agents play behaviours that benefit others: agent <em>i</em>
+          receives utility <b>U<sub>i</sub>(&pi;)</b> when a behaviour <b>&pi;</b> is played. Each
+          agent is in exactly one of three modes at a time, and its mode decides which reward it
+          earns.
+        </p>
+
+        <ol class="reward-modes">
+          <li class="reward-mode">
+            <span class="reward-name">Personal utility</span>
+            <span class="reward-desc">Agent <em>i</em> plays the behaviour that benefits itself most.</span>
+            <span class="reward-formula"><svg class="math" viewBox="0 0 71.88 17.397187" style="height:1.305em" fill="currentColor" role="img" aria-label="P sub i equals U sub i of pi sub i" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs></defs>
+ <g id="figure_1">
+  <g id="text_1">
+   <!-- $P_i \;=\; U_i(\pi_i)$ -->
+   <g transform="translate(1.44 12.837656) scale(0.15 -0.15)">
+    <defs>
+     <path id="STIXGeneral-Italic-50" d="M 934 4179 
+L 2477 4179 
+Q 3872 4179 3872 3232 
+Q 3872 2976 3753 2729 
+Q 3635 2483 3437 2317 
+Q 2995 1952 2125 1952 
+Q 1773 1952 1549 2003 
+L 1210 768 
+Q 1120 422 1120 365 
+Q 1120 250 1216 189 
+Q 1312 128 1562 102 
+L 1562 0 
+L 0 0 
+L 0 102 
+Q 275 141 361 227 
+Q 448 314 538 627 
+L 1280 3277 
+Q 1389 3667 1389 3808 
+Q 1389 3936 1299 3990 
+Q 1210 4045 934 4077 
+L 934 4179 
+z
+M 2048 3789 
+L 1606 2221 
+Q 1792 2189 1939 2189 
+Q 2496 2189 2758 2342 
+Q 3213 2598 3213 3200 
+Q 3213 3987 2381 3987 
+Q 2099 3987 2048 3789 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-69" d="M 1690 3834 
+Q 1690 3699 1597 3603 
+Q 1504 3507 1376 3507 
+Q 1235 3507 1152 3600 
+Q 1069 3693 1069 3846 
+Q 1069 3994 1155 4090 
+Q 1242 4186 1370 4186 
+Q 1498 4186 1594 4080 
+Q 1690 3974 1690 3834 
+z
+M 1421 730 
+L 1504 659 
+Q 1235 243 1049 86 
+Q 864 -70 627 -70 
+Q 314 -70 314 282 
+Q 314 467 454 992 
+L 762 2125 
+Q 819 2330 819 2406 
+Q 819 2502 745 2528 
+Q 672 2554 410 2560 
+L 410 2662 
+Q 704 2688 1434 2822 
+L 1459 2803 
+L 858 608 
+Q 794 390 794 326 
+Q 794 230 883 230 
+Q 1043 230 1421 730 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-3d" d="M 4077 2048 
+L 307 2048 
+L 307 2470 
+L 4077 2470 
+L 4077 2048 
+z
+M 4077 768 
+L 307 768 
+L 307 1190 
+L 4077 1190 
+L 4077 768 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-55" d="M 4896 4179 
+L 4896 4077 
+Q 4762 4045 4694 4016 
+Q 4627 3987 4563 3945 
+Q 4499 3904 4451 3789 
+Q 4403 3674 4358 3539 
+Q 4314 3405 4230 3123 
+L 3699 1299 
+Q 3482 557 3078 218 
+Q 2694 -115 2067 -115 
+Q 1440 -115 1046 179 
+Q 653 474 653 934 
+Q 653 1286 934 2317 
+L 1267 3526 
+Q 1325 3731 1325 3814 
+Q 1325 3942 1213 4006 
+Q 1101 4070 813 4077 
+L 813 4179 
+L 2554 4179 
+L 2554 4077 
+Q 2227 4045 2102 3936 
+Q 1978 3827 1888 3494 
+L 1485 2048 
+Q 1229 1146 1229 902 
+Q 1229 563 1481 355 
+Q 1734 147 2112 147 
+Q 2650 147 2976 492 
+Q 3302 838 3520 1632 
+L 3930 3123 
+Q 4077 3667 4077 3782 
+Q 4077 3923 3981 3987 
+Q 3885 4051 3629 4077 
+L 3629 4179 
+L 4896 4179 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-28" d="M 1946 -1030 
+L 1869 -1133 
+Q 1126 -710 716 32 
+Q 307 774 307 1613 
+Q 307 3386 1888 4326 
+L 1946 4224 
+Q 1293 3667 1075 3126 
+Q 858 2586 858 1632 
+Q 858 685 1082 96 
+Q 1306 -493 1946 -1030 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-3c0" d="M 3430 2739 
+L 3296 2266 
+L 2643 2266 
+Q 2624 2195 2502 1782 
+Q 2381 1370 2297 1072 
+Q 2214 774 2214 717 
+Q 2214 448 2413 448 
+Q 2694 448 2867 838 
+L 2970 838 
+Q 2886 486 2652 208 
+Q 2419 -70 2093 -70 
+Q 1901 -70 1808 67 
+Q 1715 205 1715 410 
+Q 1715 627 1824 922 
+L 2310 2266 
+L 1645 2266 
+Q 1568 2061 1401 1469 
+Q 1235 877 1068 512 
+Q 902 147 672 -38 
+Q 563 -115 442 -115 
+Q 314 -115 218 -32 
+Q 122 51 122 166 
+Q 122 429 314 480 
+Q 634 563 774 928 
+L 1299 2266 
+L 1261 2266 
+Q 973 2266 819 2208 
+Q 666 2150 474 1914 
+L 371 1914 
+Q 640 2362 931 2550 
+Q 1222 2739 1696 2739 
+L 3430 2739 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-29" d="M 186 4224 
+L 262 4326 
+Q 992 3891 1408 3148 
+Q 1824 2406 1824 1581 
+Q 1824 -166 243 -1133 
+L 186 -1030 
+Q 845 -486 1059 54 
+Q 1274 595 1274 1562 
+Q 1274 2534 1059 3120 
+Q 845 3706 186 4224 
+z
+" transform="scale(0.015625)"/>
+    </defs>
+    <use xlink:href="#STIXGeneral-Italic-50" transform="translate(0 0.40625)"/>
+    <use xlink:href="#STIXGeneral-Italic-69" transform="translate(61.099991 -12.821875) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-3d" transform="translate(119.465065 0.40625)"/>
+    <use xlink:href="#STIXGeneral-Italic-55" transform="translate(222.460757 0.40625)"/>
+    <use xlink:href="#STIXGeneral-Italic-69" transform="translate(294.660738 -12.821875) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-28" transform="translate(318.530105 0.40625)"/>
+    <use xlink:href="#STIXGeneral-Italic-3c0" transform="translate(351.830092 0.40625)"/>
+    <use xlink:href="#STIXGeneral-Italic-69" transform="translate(402.230086 -12.821875) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-29" transform="translate(426.099453 0.40625)"/>
+   </g>
+  </g>
+ </g>
+</svg></span>
+          </li>
+          <li class="reward-mode">
+            <span class="reward-name">Emulation</span>
+            <span class="reward-desc">Agent <em>i</em> copies the behaviour of the most reputed agent it observes.</span>
+            <span class="reward-formula"><svg class="math" viewBox="0 0 97.53 30.33" style="height:2.275em" fill="currentColor" role="img" aria-label="E sub i equals gamma times the sum over all agents j in A of U sub j of pi sub i" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs></defs>
+ <g id="figure_1">
+  <g id="text_1">
+   <!-- $E_i \;=\; \gamma \sum_{j \in A} U_j(\pi_i)$ -->
+   <g transform="translate(1.44 12.99) scale(0.15 -0.15)">
+    <defs>
+     <path id="STIXGeneral-Italic-45" d="M 4058 4179 
+L 3859 3194 
+L 3718 3206 
+Q 3738 3366 3738 3501 
+Q 3738 3789 3501 3878 
+Q 3264 3968 2509 3968 
+Q 2240 3968 2157 3939 
+Q 2074 3910 2042 3802 
+L 1619 2310 
+L 2118 2310 
+Q 2541 2310 2681 2412 
+Q 2822 2515 3008 2931 
+L 3123 2906 
+L 2688 1421 
+L 2560 1453 
+Q 2605 1651 2605 1786 
+Q 2605 1939 2560 1984 
+Q 2451 2080 2061 2080 
+L 1562 2080 
+L 1357 1363 
+Q 1126 550 1126 429 
+Q 1126 211 1632 211 
+Q 2458 211 2931 461 
+Q 3174 589 3533 1088 
+L 3635 1037 
+L 3238 0 
+L -6 0 
+L -6 102 
+Q 269 154 352 227 
+Q 435 301 512 576 
+L 1299 3405 
+Q 1370 3642 1370 3814 
+Q 1370 3942 1270 3996 
+Q 1171 4051 877 4077 
+L 877 4179 
+L 4058 4179 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-69" d="M 1690 3834 
+Q 1690 3699 1597 3603 
+Q 1504 3507 1376 3507 
+Q 1235 3507 1152 3600 
+Q 1069 3693 1069 3846 
+Q 1069 3994 1155 4090 
+Q 1242 4186 1370 4186 
+Q 1498 4186 1594 4080 
+Q 1690 3974 1690 3834 
+z
+M 1421 730 
+L 1504 659 
+Q 1235 243 1049 86 
+Q 864 -70 627 -70 
+Q 314 -70 314 282 
+Q 314 467 454 992 
+L 762 2125 
+Q 819 2330 819 2406 
+Q 819 2502 745 2528 
+Q 672 2554 410 2560 
+L 410 2662 
+Q 704 2688 1434 2822 
+L 1459 2803 
+L 858 608 
+Q 794 390 794 326 
+Q 794 230 883 230 
+Q 1043 230 1421 730 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-3d" d="M 4077 2048 
+L 307 2048 
+L 307 2470 
+L 4077 2470 
+L 4077 2048 
+z
+M 4077 768 
+L 307 768 
+L 307 1190 
+L 4077 1190 
+L 4077 768 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-3b3" d="M 2803 2739 
+L 1050 250 
+Q 1037 32 1030 -73 
+Q 1024 -179 998 -406 
+Q 973 -634 934 -758 
+Q 896 -883 835 -1033 
+Q 774 -1184 681 -1251 
+Q 589 -1318 467 -1318 
+Q 224 -1318 224 -998 
+Q 224 -845 329 -608 
+Q 435 -371 608 -57 
+Q 781 256 845 397 
+Q 941 1293 941 1555 
+Q 941 2381 634 2381 
+Q 538 2381 422 2259 
+Q 307 2138 224 1894 
+L 122 1894 
+Q 358 2784 755 2784 
+Q 986 2784 1075 2589 
+Q 1165 2394 1165 2029 
+Q 1165 1850 1145 1632 
+Q 1126 1414 1091 1148 
+Q 1056 883 1050 813 
+L 2189 2739 
+L 2803 2739 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-2211" d="M 5478 256 
+L 5139 -1658 
+L 371 -1658 
+L 2880 1606 
+L 531 4883 
+L 5312 4883 
+L 5312 3277 
+L 5120 3277 
+Q 5018 3949 4765 4205 
+Q 4512 4461 3891 4461 
+L 1843 4461 
+L 3699 1958 
+L 1549 -819 
+L 4198 -819 
+Q 4698 -819 4934 -550 
+Q 5171 -282 5286 256 
+L 5478 256 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-6a" d="M 1786 3827 
+Q 1786 3699 1690 3603 
+Q 1594 3507 1466 3507 
+Q 1318 3507 1219 3600 
+Q 1120 3693 1120 3840 
+Q 1120 3981 1222 4077 
+Q 1325 4173 1459 4173 
+Q 1587 4173 1686 4067 
+Q 1786 3962 1786 3827 
+z
+M 1574 2803 
+L 909 179 
+Q 710 -595 419 -960 
+Q 128 -1325 -288 -1325 
+Q -512 -1325 -653 -1216 
+Q -794 -1107 -794 -934 
+Q -794 -819 -717 -736 
+Q -640 -653 -531 -653 
+Q -282 -653 -282 -890 
+Q -282 -966 -320 -1014 
+Q -358 -1062 -358 -1107 
+Q -358 -1184 -243 -1184 
+Q -51 -1184 80 -934 
+Q 211 -685 378 -19 
+L 838 1850 
+Q 941 2266 941 2362 
+Q 941 2470 873 2515 
+Q 806 2560 634 2560 
+L 467 2560 
+L 467 2662 
+Q 755 2682 1549 2822 
+L 1574 2803 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-2208" d="M 4000 -173 
+L 2138 -173 
+Q 1382 -173 883 355 
+Q 384 883 384 1612 
+Q 384 2342 877 2870 
+Q 1370 3398 2118 3398 
+L 4000 3398 
+L 4000 2976 
+L 2144 2976 
+Q 1664 2976 1286 2633 
+Q 909 2291 826 1824 
+L 4000 1824 
+L 4000 1402 
+L 819 1402 
+Q 902 934 1280 592 
+Q 1658 250 2138 250 
+L 4000 250 
+L 4000 -173 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-41" d="M 3610 0 
+L 2042 0 
+L 2042 102 
+Q 2330 115 2432 192 
+Q 2534 269 2534 442 
+Q 2534 493 2522 608 
+L 2394 1446 
+L 986 1446 
+L 608 736 
+Q 467 474 467 314 
+Q 467 122 864 102 
+L 864 0 
+L -326 0 
+L -326 102 
+Q -109 147 28 307 
+Q 166 467 531 1101 
+L 2355 4275 
+L 2522 4275 
+L 3110 736 
+Q 3174 339 3264 230 
+Q 3354 122 3610 102 
+L 3610 0 
+z
+M 2362 1677 
+L 2074 3360 
+L 1120 1677 
+L 2362 1677 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-55" d="M 4896 4179 
+L 4896 4077 
+Q 4762 4045 4694 4016 
+Q 4627 3987 4563 3945 
+Q 4499 3904 4451 3789 
+Q 4403 3674 4358 3539 
+Q 4314 3405 4230 3123 
+L 3699 1299 
+Q 3482 557 3078 218 
+Q 2694 -115 2067 -115 
+Q 1440 -115 1046 179 
+Q 653 474 653 934 
+Q 653 1286 934 2317 
+L 1267 3526 
+Q 1325 3731 1325 3814 
+Q 1325 3942 1213 4006 
+Q 1101 4070 813 4077 
+L 813 4179 
+L 2554 4179 
+L 2554 4077 
+Q 2227 4045 2102 3936 
+Q 1978 3827 1888 3494 
+L 1485 2048 
+Q 1229 1146 1229 902 
+Q 1229 563 1481 355 
+Q 1734 147 2112 147 
+Q 2650 147 2976 492 
+Q 3302 838 3520 1632 
+L 3930 3123 
+Q 4077 3667 4077 3782 
+Q 4077 3923 3981 3987 
+Q 3885 4051 3629 4077 
+L 3629 4179 
+L 4896 4179 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-28" d="M 1946 -1030 
+L 1869 -1133 
+Q 1126 -710 716 32 
+Q 307 774 307 1613 
+Q 307 3386 1888 4326 
+L 1946 4224 
+Q 1293 3667 1075 3126 
+Q 858 2586 858 1632 
+Q 858 685 1082 96 
+Q 1306 -493 1946 -1030 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-3c0" d="M 3430 2739 
+L 3296 2266 
+L 2643 2266 
+Q 2624 2195 2502 1782 
+Q 2381 1370 2297 1072 
+Q 2214 774 2214 717 
+Q 2214 448 2413 448 
+Q 2694 448 2867 838 
+L 2970 838 
+Q 2886 486 2652 208 
+Q 2419 -70 2093 -70 
+Q 1901 -70 1808 67 
+Q 1715 205 1715 410 
+Q 1715 627 1824 922 
+L 2310 2266 
+L 1645 2266 
+Q 1568 2061 1401 1469 
+Q 1235 877 1068 512 
+Q 902 147 672 -38 
+Q 563 -115 442 -115 
+Q 314 -115 218 -32 
+Q 122 51 122 166 
+Q 122 429 314 480 
+Q 634 563 774 928 
+L 1299 2266 
+L 1261 2266 
+Q 973 2266 819 2208 
+Q 666 2150 474 1914 
+L 371 1914 
+Q 640 2362 931 2550 
+Q 1222 2739 1696 2739 
+L 3430 2739 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-29" d="M 186 4224 
+L 262 4326 
+Q 992 3891 1408 3148 
+Q 1824 2406 1824 1581 
+Q 1824 -166 243 -1133 
+L 186 -1030 
+Q 845 -486 1059 54 
+Q 1274 595 1274 1562 
+Q 1274 2534 1059 3120 
+Q 845 3706 186 4224 
+z
+" transform="scale(0.015625)"/>
+    </defs>
+    <use xlink:href="#STIXGeneral-Italic-45" transform="translate(0 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-69" transform="translate(61.099991 -12.525) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-3d" transform="translate(119.465065 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-3b3" transform="translate(222.460757 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Regular-2211" transform="translate(288.460741 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-6a" transform="translate(263.460741 -90.710938) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-2208" transform="translate(293.02873 -90.710938) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Italic-41" transform="translate(351.086717 -90.710938) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Italic-55" transform="translate(393.856711 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-6a" transform="translate(466.056692 -12.525) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-28" transform="translate(489.926059 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-3c0" transform="translate(523.226046 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-69" transform="translate(573.62604 -12.525) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-29" transform="translate(597.495407 0.703125)"/>
+   </g>
+  </g>
+ </g>
+</svg></span>
+          </li>
+          <li class="reward-mode">
+            <span class="reward-name">Prestige</span>
+            <span class="reward-desc">Agent <em>i</em> plays the behaviour that maximizes the benefit to its followers.</span>
+            <span class="reward-formula"><svg class="math" viewBox="0 0 102.33 30.18" style="height:2.264em" fill="currentColor" role="img" aria-label="G sub i equals kappa times the sum over followers j in F sub i of U sub j of pi sub i" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs></defs>
+ <g id="figure_1">
+  <g id="text_1">
+   <!-- $G_i \;=\; \kappa \sum_{j \in F_i} U_j(\pi_i)$ -->
+   <g transform="translate(1.44 12.99) scale(0.15 -0.15)">
+    <defs>
+     <path id="STIXGeneral-Italic-47" d="M 4621 2042 
+L 4621 1939 
+Q 4307 1920 4188 1833 
+Q 4070 1747 4000 1478 
+L 3686 282 
+Q 2976 -115 2170 -115 
+Q 1293 -115 806 371 
+Q 582 595 457 934 
+Q 333 1274 333 1606 
+Q 333 2266 653 2848 
+Q 973 3430 1504 3802 
+Q 2170 4262 2912 4262 
+Q 3373 4262 3770 4109 
+Q 3936 4045 4051 4045 
+Q 4282 4045 4435 4262 
+L 4531 4230 
+L 4218 2970 
+L 4102 2989 
+Q 4083 3398 3866 3667 
+Q 3558 4045 2963 4045 
+Q 2214 4045 1715 3411 
+Q 1395 3008 1216 2496 
+Q 1037 1984 1037 1459 
+Q 1037 826 1376 474 
+Q 1715 122 2330 122 
+Q 2784 122 3002 339 
+Q 3059 397 3104 509 
+Q 3149 621 3251 986 
+Q 3418 1542 3418 1709 
+Q 3418 1894 3117 1920 
+L 2912 1939 
+L 2912 2042 
+L 4621 2042 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-69" d="M 1690 3834 
+Q 1690 3699 1597 3603 
+Q 1504 3507 1376 3507 
+Q 1235 3507 1152 3600 
+Q 1069 3693 1069 3846 
+Q 1069 3994 1155 4090 
+Q 1242 4186 1370 4186 
+Q 1498 4186 1594 4080 
+Q 1690 3974 1690 3834 
+z
+M 1421 730 
+L 1504 659 
+Q 1235 243 1049 86 
+Q 864 -70 627 -70 
+Q 314 -70 314 282 
+Q 314 467 454 992 
+L 762 2125 
+Q 819 2330 819 2406 
+Q 819 2502 745 2528 
+Q 672 2554 410 2560 
+L 410 2662 
+Q 704 2688 1434 2822 
+L 1459 2803 
+L 858 608 
+Q 794 390 794 326 
+Q 794 230 883 230 
+Q 1043 230 1421 730 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-3d" d="M 4077 2048 
+L 307 2048 
+L 307 2470 
+L 4077 2470 
+L 4077 2048 
+z
+M 4077 768 
+L 307 768 
+L 307 1190 
+L 4077 1190 
+L 4077 768 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-3ba" d="M 979 1440 
+L 998 1446 
+Q 1850 2541 2464 2790 
+Q 2547 2822 2630 2822 
+Q 2797 2822 2886 2736 
+Q 2976 2650 2976 2522 
+Q 2976 2387 2893 2307 
+Q 2810 2227 2682 2227 
+Q 2605 2227 2502 2288 
+Q 2400 2349 2336 2349 
+Q 2170 2349 1990 2205 
+Q 1811 2061 1414 1645 
+L 2042 544 
+Q 2202 262 2310 182 
+Q 2419 102 2624 102 
+L 2624 0 
+Q 2374 -83 2182 -83 
+Q 1786 -83 1555 326 
+L 960 1350 
+L 576 0 
+L 90 0 
+L 640 1978 
+Q 730 2317 730 2406 
+Q 730 2560 518 2560 
+L 339 2560 
+L 339 2650 
+Q 678 2694 1306 2822 
+L 1325 2803 
+L 979 1440 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-2211" d="M 5478 256 
+L 5139 -1658 
+L 371 -1658 
+L 2880 1606 
+L 531 4883 
+L 5312 4883 
+L 5312 3277 
+L 5120 3277 
+Q 5018 3949 4765 4205 
+Q 4512 4461 3891 4461 
+L 1843 4461 
+L 3699 1958 
+L 1549 -819 
+L 4198 -819 
+Q 4698 -819 4934 -550 
+Q 5171 -282 5286 256 
+L 5478 256 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-6a" d="M 1786 3827 
+Q 1786 3699 1690 3603 
+Q 1594 3507 1466 3507 
+Q 1318 3507 1219 3600 
+Q 1120 3693 1120 3840 
+Q 1120 3981 1222 4077 
+Q 1325 4173 1459 4173 
+Q 1587 4173 1686 4067 
+Q 1786 3962 1786 3827 
+z
+M 1574 2803 
+L 909 179 
+Q 710 -595 419 -960 
+Q 128 -1325 -288 -1325 
+Q -512 -1325 -653 -1216 
+Q -794 -1107 -794 -934 
+Q -794 -819 -717 -736 
+Q -640 -653 -531 -653 
+Q -282 -653 -282 -890 
+Q -282 -966 -320 -1014 
+Q -358 -1062 -358 -1107 
+Q -358 -1184 -243 -1184 
+Q -51 -1184 80 -934 
+Q 211 -685 378 -19 
+L 838 1850 
+Q 941 2266 941 2362 
+Q 941 2470 873 2515 
+Q 806 2560 634 2560 
+L 467 2560 
+L 467 2662 
+Q 755 2682 1549 2822 
+L 1574 2803 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-2208" d="M 4000 -173 
+L 2138 -173 
+Q 1382 -173 883 355 
+Q 384 883 384 1612 
+Q 384 2342 877 2870 
+Q 1370 3398 2118 3398 
+L 4000 3398 
+L 4000 2976 
+L 2144 2976 
+Q 1664 2976 1286 2633 
+Q 909 2291 826 1824 
+L 4000 1824 
+L 4000 1402 
+L 819 1402 
+Q 902 934 1280 592 
+Q 1658 250 2138 250 
+L 4000 250 
+L 4000 -173 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-46" d="M 4128 4179 
+L 3923 3194 
+L 3789 3206 
+Q 3808 3347 3808 3418 
+Q 3808 3667 3718 3772 
+Q 3629 3878 3373 3923 
+Q 3117 3968 2534 3968 
+Q 2310 3968 2220 3926 
+Q 2131 3885 2099 3763 
+L 1690 2310 
+Q 2003 2317 2147 2317 
+Q 2291 2317 2457 2345 
+Q 2624 2374 2678 2396 
+Q 2733 2419 2822 2505 
+Q 2912 2592 2950 2665 
+Q 2989 2739 3072 2912 
+L 3187 2880 
+L 2701 1376 
+L 2592 1408 
+Q 2643 1670 2643 1798 
+Q 2643 1978 2531 2029 
+Q 2419 2080 2163 2080 
+Q 1984 2080 1632 2099 
+L 1254 736 
+Q 1165 416 1165 352 
+Q 1165 237 1273 179 
+Q 1382 122 1658 102 
+L 1658 0 
+L 51 0 
+L 51 102 
+Q 314 122 410 224 
+Q 506 326 582 602 
+L 1370 3430 
+Q 1434 3661 1434 3821 
+Q 1434 3955 1347 4003 
+Q 1261 4051 947 4077 
+L 947 4179 
+L 4128 4179 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-55" d="M 4896 4179 
+L 4896 4077 
+Q 4762 4045 4694 4016 
+Q 4627 3987 4563 3945 
+Q 4499 3904 4451 3789 
+Q 4403 3674 4358 3539 
+Q 4314 3405 4230 3123 
+L 3699 1299 
+Q 3482 557 3078 218 
+Q 2694 -115 2067 -115 
+Q 1440 -115 1046 179 
+Q 653 474 653 934 
+Q 653 1286 934 2317 
+L 1267 3526 
+Q 1325 3731 1325 3814 
+Q 1325 3942 1213 4006 
+Q 1101 4070 813 4077 
+L 813 4179 
+L 2554 4179 
+L 2554 4077 
+Q 2227 4045 2102 3936 
+Q 1978 3827 1888 3494 
+L 1485 2048 
+Q 1229 1146 1229 902 
+Q 1229 563 1481 355 
+Q 1734 147 2112 147 
+Q 2650 147 2976 492 
+Q 3302 838 3520 1632 
+L 3930 3123 
+Q 4077 3667 4077 3782 
+Q 4077 3923 3981 3987 
+Q 3885 4051 3629 4077 
+L 3629 4179 
+L 4896 4179 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-28" d="M 1946 -1030 
+L 1869 -1133 
+Q 1126 -710 716 32 
+Q 307 774 307 1613 
+Q 307 3386 1888 4326 
+L 1946 4224 
+Q 1293 3667 1075 3126 
+Q 858 2586 858 1632 
+Q 858 685 1082 96 
+Q 1306 -493 1946 -1030 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-3c0" d="M 3430 2739 
+L 3296 2266 
+L 2643 2266 
+Q 2624 2195 2502 1782 
+Q 2381 1370 2297 1072 
+Q 2214 774 2214 717 
+Q 2214 448 2413 448 
+Q 2694 448 2867 838 
+L 2970 838 
+Q 2886 486 2652 208 
+Q 2419 -70 2093 -70 
+Q 1901 -70 1808 67 
+Q 1715 205 1715 410 
+Q 1715 627 1824 922 
+L 2310 2266 
+L 1645 2266 
+Q 1568 2061 1401 1469 
+Q 1235 877 1068 512 
+Q 902 147 672 -38 
+Q 563 -115 442 -115 
+Q 314 -115 218 -32 
+Q 122 51 122 166 
+Q 122 429 314 480 
+Q 634 563 774 928 
+L 1299 2266 
+L 1261 2266 
+Q 973 2266 819 2208 
+Q 666 2150 474 1914 
+L 371 1914 
+Q 640 2362 931 2550 
+Q 1222 2739 1696 2739 
+L 3430 2739 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-29" d="M 186 4224 
+L 262 4326 
+Q 992 3891 1408 3148 
+Q 1824 2406 1824 1581 
+Q 1824 -166 243 -1133 
+L 186 -1030 
+Q 845 -486 1059 54 
+Q 1274 595 1274 1562 
+Q 1274 2534 1059 3120 
+Q 845 3706 186 4224 
+z
+" transform="scale(0.015625)"/>
+    </defs>
+    <use xlink:href="#STIXGeneral-Italic-47" transform="translate(0 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-69" transform="translate(72.199982 -12.525) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-3d" transform="translate(130.565055 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-3ba" transform="translate(233.560747 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Regular-2211" transform="translate(311.960741 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-6a" transform="translate(277.960741 -89.660937) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-2208" transform="translate(307.52873 -89.660937) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Italic-46" transform="translate(365.586717 -89.660937) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Italic-69" transform="translate(408.356711 -98.920625) scale(0.49)"/>
+    <use xlink:href="#STIXGeneral-Italic-55" transform="translate(425.065267 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-6a" transform="translate(497.265249 -12.525) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-28" transform="translate(521.134615 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-3c0" transform="translate(554.434603 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-69" transform="translate(604.834597 -12.525) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-29" transform="translate(628.703963 0.703125)"/>
+   </g>
+  </g>
+ </g>
+</svg></span>
+          </li>
+        </ol>
+
+        <p class="reward-note">
+          <b>&gamma;</b> and <b>&kappa;</b> are scaling parameters, and <b>F<sub>i</sub></b> is the
+          set of agents currently following <em>i</em>.
         </p>
 
         <h3>How the norm emerges</h3>
-        <p>
-          The three steps in the <strong>animation</strong> (see right) sketch the idea. At first
-          every agent is in personal-utility mode, each choosing whatever behavior serves it best
-          on its own (Step 1). One behavior turns out to generate more welfare than the rest, so
-          its reputation climbs, and the other agents realize copying it pays better than going it
-          alone &mdash; they switch to emulation mode and adopt it (Step 2). The agent being
-          copied then switches too: now in prestige mode, its reward depends on how much its
-          behavior benefits its followers, so it starts choosing whichever behavior helps them
-          most (Step 3). That is exactly the welfare-optimal norm &mdash; and because everyone
-          else is still emulating it, the whole group converges on it too.
+        <p>The animation plays this out in three steps.</p>
+        <p class="norm-step">
+          <span class="norm-step-label">Step 1.</span> Every agent is in personal-utility mode,
+          playing whatever behaviour serves it best on its own.
+        </p>
+        <p class="norm-step">
+          <span class="norm-step-label">Step 2.</span> One behaviour generates more welfare than the
+          rest, so its reputation climbs. Copying it now pays better than going it alone, and the
+          other agents switch to emulation mode and adopt it.
+        </p>
+        <p class="norm-step">
+          <span class="norm-step-label">Step 3.</span> The agent being copied switches too. In
+          prestige mode its reward depends on how much its behaviour benefits its followers, so it
+          picks whichever one helps them most &mdash; the welfare-optimal norm. Everyone else is
+          still emulating it, so the whole group reaches consensus on it.
         </p>
 
-        <h3>Why gossip alone is not enough</h3>
+        <h3 class="h3-with-help">Why is gossip not enough<button
+            class="prose-help-btn" id="gossipLimitsHelpBtn" type="button"
+            aria-label="Why is gossip not enough?">?</button></h3>
+      </div>
+
+      <dialog class="sim-help" id="gossipLimitsHelp" aria-labelledby="gossipLimitsHelpTitle">
+        <button class="sim-help-close" id="gossipLimitsHelpClose" type="button" aria-label="Close">&times;</button>
+        <h3 id="gossipLimitsHelpTitle">Why is gossip not enough?</h3>
         <p>
           Project 01 has shepherds gossip their way to a single best option, but running that
           directly on norms breaks down in two ways. It asks every agent to rank <em>all</em>
@@ -388,7 +1277,7 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
           space of norms, and there is no tie to break &mdash; whoever is currently most
           beneficial simply attracts the most followers.
         </p>
-      </div>
+      </dialog>
 
       <!-- Project 02 visual set aside — see archive/project2-norms-visual.html
            for the original two-pastures sim and how to restore it. Trying a
@@ -408,7 +1297,7 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
 
         <div class="leader-step">
           <div class="leader-step-label">Step 2</div>
-          <p class="leader-step-caption">Agents copy the behaviors of highly reputated agents</p>
+          <p class="leader-step-caption">Agents copy the behaviours of highly reputated agents</p>
           <svg class="leader-step2-svg" viewBox="0 0 220 220" role="img" aria-labelledby="step2Title step2Desc">
             <title id="step2Title">Identifying the leader</title>
             <desc id="step2Desc">Agents sit in a circle. One at a time, in random order, the others point an arrow at a randomly chosen target, which moves toward the centre as more arrows arrive, reaching the centre once everyone points to it. It then resets and a new random target is chosen.</desc>
@@ -437,40 +1326,671 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
 
         <h4>Personal utility</h4>
         <p>
-          The ordinary payoff of one's own behavior &mdash; how many cows it can graze, how well
+          The ordinary payoff of one's own behaviour &mdash; how many cows it can graze, how well
           it eats. This is the only reward on offer at the very start.
         </p>
 
         <h4>Reputation</h4>
         <p>
-          A property of a <em>behavior</em>, not of any one agent: how much welfare that behavior
-          generates for the group. Some behaviors are simply better for everyone than others, and
-          reputation is how good a behavior actually is.
+          A property of a <em>behaviour</em>, not of any one agent: how much welfare that behaviour
+          generates for the group. Some behaviours are simply better for everyone than others, and
+          reputation is how good a behaviour actually is.
         </p>
 
         <h4>Emulation</h4>
         <p>
-          The reward for copying someone else's behavior, in emulation mode. It is directly
-          proportional to that behavior's reputation &mdash; copying something highly reputed
+          The reward for copying someone else's behaviour, in emulation mode. It is directly
+          proportional to that behaviour's reputation &mdash; copying something highly reputed
           pays better than copying something mediocre, or than sticking with personal utility.
         </p>
 
         <h4>Prestige</h4>
         <p>
           The reward for <em>being</em> copied, in prestige mode. It is a multiple of the total
-          benefit an agent's behavior provides everyone currently following it &mdash; more
-          followers, or a more beneficial behavior, both raise it.
+          benefit an agent's behaviour provides everyone currently following it &mdash; more
+          followers, or a more beneficial behaviour, both raise it.
+        </p>
+
+        <h4>The three rewards, formally</h4>
+        <p>
+          Writing <b>N</b> for the agents, <b>b_i</b> for the behaviour agent <em>i</em> currently
+          plays, and <b>u_i(b)</b> for <em>i</em>'s own payoff when the behaviour is <em>b</em>:
+        </p>
+        <dl class="mathblock">
+          <dt>reputation of b</dt>
+          <dd><svg class="math" viewBox="0 0 98.88 30.18" style="--math-ar:3.2763" fill="currentColor" role="img" aria-label="R of b equals the sum over all agents j in N of u_j of b" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs></defs>
+ <g id="figure_1">
+  <g id="text_1">
+   <!-- $R(b) \;=\; \sum_{j \in N} u_j(b)$ -->
+   <g transform="translate(1.44 12.99) scale(0.15 -0.15)">
+    <defs>
+     <path id="STIXGeneral-Italic-52" d="M 845 4179 
+L 2458 4179 
+Q 3078 4179 3420 3936 
+Q 3763 3693 3763 3277 
+Q 3763 2778 3341 2458 
+Q 3091 2266 2502 2131 
+L 3072 627 
+Q 3181 333 3299 217 
+Q 3418 102 3629 102 
+L 3629 0 
+L 2688 0 
+L 1901 2074 
+L 1478 2106 
+L 1126 806 
+Q 1043 512 1043 403 
+Q 1043 256 1126 192 
+Q 1210 128 1472 102 
+L 1472 0 
+L -83 0 
+L -83 102 
+Q 173 134 278 243 
+Q 384 352 461 646 
+L 1222 3405 
+Q 1299 3699 1299 3808 
+Q 1299 3923 1210 3987 
+Q 1133 4038 845 4077 
+L 845 4179 
+z
+M 1958 3795 
+L 1555 2342 
+Q 1754 2310 1882 2310 
+Q 2451 2310 2771 2566 
+Q 3091 2822 3091 3270 
+Q 3091 3603 2892 3795 
+Q 2694 3987 2323 3987 
+Q 2010 3987 1958 3795 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-28" d="M 1946 -1030 
+L 1869 -1133 
+Q 1126 -710 716 32 
+Q 307 774 307 1613 
+Q 307 3386 1888 4326 
+L 1946 4224 
+Q 1293 3667 1075 3126 
+Q 858 2586 858 1632 
+Q 858 685 1082 96 
+Q 1306 -493 1946 -1030 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-62" d="M 1043 1856 
+L 1050 1856 
+Q 1370 2387 1654 2604 
+Q 1939 2822 2285 2822 
+Q 2618 2822 2822 2617 
+Q 3027 2413 3027 2054 
+Q 3027 1562 2726 1062 
+Q 2426 563 1942 246 
+Q 1459 -70 979 -70 
+Q 685 -70 416 32 
+Q 147 134 147 269 
+L 147 307 
+L 1056 3654 
+Q 1114 3885 1114 3955 
+Q 1114 4058 1053 4080 
+Q 992 4102 704 4115 
+L 704 4224 
+Q 1184 4282 1683 4371 
+L 1715 4339 
+L 1581 3814 
+L 1043 1856 
+z
+M 2483 1958 
+Q 2483 2509 2035 2509 
+Q 1594 2509 1158 1773 
+Q 954 1427 826 1008 
+Q 698 589 698 294 
+Q 698 77 992 77 
+Q 1414 77 1779 454 
+Q 2074 762 2278 1187 
+Q 2483 1613 2483 1958 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-29" d="M 186 4224 
+L 262 4326 
+Q 992 3891 1408 3148 
+Q 1824 2406 1824 1581 
+Q 1824 -166 243 -1133 
+L 186 -1030 
+Q 845 -486 1059 54 
+Q 1274 595 1274 1562 
+Q 1274 2534 1059 3120 
+Q 845 3706 186 4224 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-3d" d="M 4077 2048 
+L 307 2048 
+L 307 2470 
+L 4077 2470 
+L 4077 2048 
+z
+M 4077 768 
+L 307 768 
+L 307 1190 
+L 4077 1190 
+L 4077 768 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-2211" d="M 5478 256 
+L 5139 -1658 
+L 371 -1658 
+L 2880 1606 
+L 531 4883 
+L 5312 4883 
+L 5312 3277 
+L 5120 3277 
+Q 5018 3949 4765 4205 
+Q 4512 4461 3891 4461 
+L 1843 4461 
+L 3699 1958 
+L 1549 -819 
+L 4198 -819 
+Q 4698 -819 4934 -550 
+Q 5171 -282 5286 256 
+L 5478 256 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-6a" d="M 1786 3827 
+Q 1786 3699 1690 3603 
+Q 1594 3507 1466 3507 
+Q 1318 3507 1219 3600 
+Q 1120 3693 1120 3840 
+Q 1120 3981 1222 4077 
+Q 1325 4173 1459 4173 
+Q 1587 4173 1686 4067 
+Q 1786 3962 1786 3827 
+z
+M 1574 2803 
+L 909 179 
+Q 710 -595 419 -960 
+Q 128 -1325 -288 -1325 
+Q -512 -1325 -653 -1216 
+Q -794 -1107 -794 -934 
+Q -794 -819 -717 -736 
+Q -640 -653 -531 -653 
+Q -282 -653 -282 -890 
+Q -282 -966 -320 -1014 
+Q -358 -1062 -358 -1107 
+Q -358 -1184 -243 -1184 
+Q -51 -1184 80 -934 
+Q 211 -685 378 -19 
+L 838 1850 
+Q 941 2266 941 2362 
+Q 941 2470 873 2515 
+Q 806 2560 634 2560 
+L 467 2560 
+L 467 2662 
+Q 755 2682 1549 2822 
+L 1574 2803 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-2208" d="M 4000 -173 
+L 2138 -173 
+Q 1382 -173 883 355 
+Q 384 883 384 1612 
+Q 384 2342 877 2870 
+Q 1370 3398 2118 3398 
+L 4000 3398 
+L 4000 2976 
+L 2144 2976 
+Q 1664 2976 1286 2633 
+Q 909 2291 826 1824 
+L 4000 1824 
+L 4000 1402 
+L 819 1402 
+Q 902 934 1280 592 
+Q 1658 250 2138 250 
+L 4000 250 
+L 4000 -173 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-4e" d="M 4653 4179 
+L 4653 4077 
+Q 4480 4038 4413 4016 
+Q 4346 3994 4266 3882 
+Q 4186 3770 4144 3635 
+Q 4102 3501 4000 3149 
+L 3066 -96 
+L 2950 -96 
+L 1478 3424 
+L 749 723 
+Q 691 525 691 378 
+Q 691 243 790 182 
+Q 890 122 1139 102 
+L 1139 0 
+L -128 0 
+L -128 102 
+Q 147 141 262 304 
+Q 378 467 550 1075 
+L 1299 3731 
+Q 1152 4077 749 4077 
+L 749 4179 
+L 1773 4179 
+L 3098 986 
+L 3776 3469 
+Q 3827 3648 3827 3750 
+Q 3827 3923 3740 3987 
+Q 3654 4051 3386 4077 
+L 3386 4179 
+L 4653 4179 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-75" d="M 2950 762 
+L 3040 704 
+Q 2733 237 2560 89 
+Q 2387 -58 2157 -58 
+Q 1850 -58 1850 250 
+Q 1850 538 2138 1510 
+Q 1568 576 1257 253 
+Q 947 -70 608 -70 
+Q 269 -70 269 269 
+Q 269 384 442 1088 
+L 666 1978 
+Q 755 2349 755 2406 
+Q 755 2483 684 2521 
+Q 614 2560 365 2560 
+L 365 2650 
+Q 806 2701 1325 2822 
+L 1350 2803 
+L 781 531 
+Q 762 474 762 429 
+Q 762 269 890 269 
+Q 1178 269 1798 1210 
+Q 2010 1530 2128 1795 
+Q 2246 2061 2502 2765 
+L 2976 2765 
+L 2470 851 
+Q 2349 390 2349 352 
+Q 2349 243 2419 243 
+Q 2496 243 2605 345 
+Q 2714 448 2950 762 
+z
+" transform="scale(0.015625)"/>
+    </defs>
+    <use xlink:href="#STIXGeneral-Italic-52" transform="translate(0 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Regular-28" transform="translate(61.099991 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-62" transform="translate(94.399979 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Regular-29" transform="translate(144.399963 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Regular-3d" transform="translate(212.195658 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Regular-2211" transform="translate(342.19135 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-6a" transform="translate(315.19135 -89.660937) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-2208" transform="translate(344.759339 -89.660937) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Italic-4e" transform="translate(402.817326 -89.660937) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Italic-75" transform="translate(449.507324 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-6a" transform="translate(499.507309 -12.525) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-28" transform="translate(523.376675 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-62" transform="translate(556.676663 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Regular-29" transform="translate(606.676648 0.703125)"/>
+   </g>
+  </g>
+ </g>
+</svg></dd>
+          <dt>followers of i</dt>
+          <dd><code>F_i = { j : j emulates i }</code></dd>
+          <dt>personal utility</dt>
+          <dd><code>r_i = u_i(b_i)</code></dd>
+          <dt>emulation, of k</dt>
+          <dd><code>r_i = &alpha; &middot; R(b_k)</code></dd>
+          <dt>prestige</dt>
+          <dd><svg class="math" viewBox="0 0 94.83 30.18" style="--math-ar:3.1421" fill="currentColor" role="img" aria-label="r sub i equals beta times the sum over followers j in F sub i of u sub j of b sub i" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs></defs>
+ <g id="figure_1">
+  <g id="text_1">
+   <!-- $r_i \;=\; \beta \sum_{j \in F_i} u_j(b_i)$ -->
+   <g transform="translate(1.44 12.99) scale(0.15 -0.15)">
+    <defs>
+     <path id="STIXGeneral-Italic-72" d="M 1126 1427 
+L 1229 1651 
+Q 1446 2131 1830 2534 
+Q 2106 2822 2336 2822 
+Q 2470 2822 2553 2732 
+Q 2637 2643 2637 2496 
+Q 2637 2349 2557 2249 
+Q 2477 2150 2336 2150 
+Q 2214 2150 2112 2317 
+Q 2061 2406 2010 2406 
+Q 1837 2406 1485 1805 
+Q 1267 1434 1136 1104 
+Q 1005 774 774 0 
+L 288 0 
+L 806 1869 
+Q 909 2246 909 2394 
+Q 909 2560 666 2560 
+Q 614 2560 467 2541 
+L 467 2650 
+L 1459 2822 
+L 1478 2810 
+L 1126 1427 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-69" d="M 1690 3834 
+Q 1690 3699 1597 3603 
+Q 1504 3507 1376 3507 
+Q 1235 3507 1152 3600 
+Q 1069 3693 1069 3846 
+Q 1069 3994 1155 4090 
+Q 1242 4186 1370 4186 
+Q 1498 4186 1594 4080 
+Q 1690 3974 1690 3834 
+z
+M 1421 730 
+L 1504 659 
+Q 1235 243 1049 86 
+Q 864 -70 627 -70 
+Q 314 -70 314 282 
+Q 314 467 454 992 
+L 762 2125 
+Q 819 2330 819 2406 
+Q 819 2502 745 2528 
+Q 672 2554 410 2560 
+L 410 2662 
+Q 704 2688 1434 2822 
+L 1459 2803 
+L 858 608 
+Q 794 390 794 326 
+Q 794 230 883 230 
+Q 1043 230 1421 730 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-3d" d="M 4077 2048 
+L 307 2048 
+L 307 2470 
+L 4077 2470 
+L 4077 2048 
+z
+M 4077 768 
+L 307 768 
+L 307 1190 
+L 4077 1190 
+L 4077 768 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-3b2" d="M -58 -813 
+L 819 2355 
+Q 902 2662 995 2908 
+Q 1088 3155 1235 3433 
+Q 1382 3712 1555 3901 
+Q 1728 4090 1977 4214 
+Q 2227 4339 2515 4339 
+Q 2816 4339 3053 4182 
+Q 3290 4026 3290 3693 
+Q 3290 3328 3037 3001 
+Q 2784 2675 2470 2534 
+L 2470 2528 
+Q 2682 2509 2858 2320 
+Q 3034 2131 3034 1818 
+Q 3034 1376 2694 873 
+Q 2355 371 1901 122 
+Q 1562 -70 1107 -70 
+Q 922 -70 685 38 
+L 442 -813 
+Q 352 -1126 243 -1312 
+L -256 -1312 
+Q -154 -1158 -58 -813 
+z
+M 1491 3053 
+L 762 288 
+Q 762 186 848 118 
+Q 934 51 1069 51 
+Q 1594 51 2029 704 
+Q 2464 1357 2464 2029 
+Q 2464 2406 2208 2406 
+Q 2150 2406 2044 2380 
+Q 1939 2355 1888 2355 
+Q 1805 2355 1750 2396 
+Q 1696 2438 1696 2496 
+Q 1696 2650 1978 2650 
+Q 1997 2650 2099 2630 
+Q 2202 2611 2253 2611 
+Q 2451 2611 2640 2969 
+Q 2829 3328 2829 3622 
+Q 2829 3962 2713 4083 
+Q 2598 4205 2400 4205 
+Q 2080 4205 1846 3865 
+Q 1613 3526 1491 3053 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-2211" d="M 5478 256 
+L 5139 -1658 
+L 371 -1658 
+L 2880 1606 
+L 531 4883 
+L 5312 4883 
+L 5312 3277 
+L 5120 3277 
+Q 5018 3949 4765 4205 
+Q 4512 4461 3891 4461 
+L 1843 4461 
+L 3699 1958 
+L 1549 -819 
+L 4198 -819 
+Q 4698 -819 4934 -550 
+Q 5171 -282 5286 256 
+L 5478 256 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-6a" d="M 1786 3827 
+Q 1786 3699 1690 3603 
+Q 1594 3507 1466 3507 
+Q 1318 3507 1219 3600 
+Q 1120 3693 1120 3840 
+Q 1120 3981 1222 4077 
+Q 1325 4173 1459 4173 
+Q 1587 4173 1686 4067 
+Q 1786 3962 1786 3827 
+z
+M 1574 2803 
+L 909 179 
+Q 710 -595 419 -960 
+Q 128 -1325 -288 -1325 
+Q -512 -1325 -653 -1216 
+Q -794 -1107 -794 -934 
+Q -794 -819 -717 -736 
+Q -640 -653 -531 -653 
+Q -282 -653 -282 -890 
+Q -282 -966 -320 -1014 
+Q -358 -1062 -358 -1107 
+Q -358 -1184 -243 -1184 
+Q -51 -1184 80 -934 
+Q 211 -685 378 -19 
+L 838 1850 
+Q 941 2266 941 2362 
+Q 941 2470 873 2515 
+Q 806 2560 634 2560 
+L 467 2560 
+L 467 2662 
+Q 755 2682 1549 2822 
+L 1574 2803 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-2208" d="M 4000 -173 
+L 2138 -173 
+Q 1382 -173 883 355 
+Q 384 883 384 1612 
+Q 384 2342 877 2870 
+Q 1370 3398 2118 3398 
+L 4000 3398 
+L 4000 2976 
+L 2144 2976 
+Q 1664 2976 1286 2633 
+Q 909 2291 826 1824 
+L 4000 1824 
+L 4000 1402 
+L 819 1402 
+Q 902 934 1280 592 
+Q 1658 250 2138 250 
+L 4000 250 
+L 4000 -173 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-46" d="M 4128 4179 
+L 3923 3194 
+L 3789 3206 
+Q 3808 3347 3808 3418 
+Q 3808 3667 3718 3772 
+Q 3629 3878 3373 3923 
+Q 3117 3968 2534 3968 
+Q 2310 3968 2220 3926 
+Q 2131 3885 2099 3763 
+L 1690 2310 
+Q 2003 2317 2147 2317 
+Q 2291 2317 2457 2345 
+Q 2624 2374 2678 2396 
+Q 2733 2419 2822 2505 
+Q 2912 2592 2950 2665 
+Q 2989 2739 3072 2912 
+L 3187 2880 
+L 2701 1376 
+L 2592 1408 
+Q 2643 1670 2643 1798 
+Q 2643 1978 2531 2029 
+Q 2419 2080 2163 2080 
+Q 1984 2080 1632 2099 
+L 1254 736 
+Q 1165 416 1165 352 
+Q 1165 237 1273 179 
+Q 1382 122 1658 102 
+L 1658 0 
+L 51 0 
+L 51 102 
+Q 314 122 410 224 
+Q 506 326 582 602 
+L 1370 3430 
+Q 1434 3661 1434 3821 
+Q 1434 3955 1347 4003 
+Q 1261 4051 947 4077 
+L 947 4179 
+L 4128 4179 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-75" d="M 2950 762 
+L 3040 704 
+Q 2733 237 2560 89 
+Q 2387 -58 2157 -58 
+Q 1850 -58 1850 250 
+Q 1850 538 2138 1510 
+Q 1568 576 1257 253 
+Q 947 -70 608 -70 
+Q 269 -70 269 269 
+Q 269 384 442 1088 
+L 666 1978 
+Q 755 2349 755 2406 
+Q 755 2483 684 2521 
+Q 614 2560 365 2560 
+L 365 2650 
+Q 806 2701 1325 2822 
+L 1350 2803 
+L 781 531 
+Q 762 474 762 429 
+Q 762 269 890 269 
+Q 1178 269 1798 1210 
+Q 2010 1530 2128 1795 
+Q 2246 2061 2502 2765 
+L 2976 2765 
+L 2470 851 
+Q 2349 390 2349 352 
+Q 2349 243 2419 243 
+Q 2496 243 2605 345 
+Q 2714 448 2950 762 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-28" d="M 1946 -1030 
+L 1869 -1133 
+Q 1126 -710 716 32 
+Q 307 774 307 1613 
+Q 307 3386 1888 4326 
+L 1946 4224 
+Q 1293 3667 1075 3126 
+Q 858 2586 858 1632 
+Q 858 685 1082 96 
+Q 1306 -493 1946 -1030 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Italic-62" d="M 1043 1856 
+L 1050 1856 
+Q 1370 2387 1654 2604 
+Q 1939 2822 2285 2822 
+Q 2618 2822 2822 2617 
+Q 3027 2413 3027 2054 
+Q 3027 1562 2726 1062 
+Q 2426 563 1942 246 
+Q 1459 -70 979 -70 
+Q 685 -70 416 32 
+Q 147 134 147 269 
+L 147 307 
+L 1056 3654 
+Q 1114 3885 1114 3955 
+Q 1114 4058 1053 4080 
+Q 992 4102 704 4115 
+L 704 4224 
+Q 1184 4282 1683 4371 
+L 1715 4339 
+L 1581 3814 
+L 1043 1856 
+z
+M 2483 1958 
+Q 2483 2509 2035 2509 
+Q 1594 2509 1158 1773 
+Q 954 1427 826 1008 
+Q 698 589 698 294 
+Q 698 77 992 77 
+Q 1414 77 1779 454 
+Q 2074 762 2278 1187 
+Q 2483 1613 2483 1958 
+z
+" transform="scale(0.015625)"/>
+     <path id="STIXGeneral-Regular-29" d="M 186 4224 
+L 262 4326 
+Q 992 3891 1408 3148 
+Q 1824 2406 1824 1581 
+Q 1824 -166 243 -1133 
+L 186 -1030 
+Q 845 -486 1059 54 
+Q 1274 595 1274 1562 
+Q 1274 2534 1059 3120 
+Q 845 3706 186 4224 
+z
+" transform="scale(0.015625)"/>
+    </defs>
+    <use xlink:href="#STIXGeneral-Italic-72" transform="translate(0 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-69" transform="translate(38.899994 -12.525) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-3d" transform="translate(97.265068 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-3b2" transform="translate(200.26076 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Regular-2211" transform="translate(284.86075 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-6a" transform="translate(250.86075 -89.660937) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-2208" transform="translate(280.428739 -89.660937) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Italic-46" transform="translate(338.486726 -89.660937) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Italic-69" transform="translate(381.25672 -98.920625) scale(0.49)"/>
+    <use xlink:href="#STIXGeneral-Italic-75" transform="translate(397.965276 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-6a" transform="translate(447.965261 -12.525) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-28" transform="translate(471.834627 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-62" transform="translate(505.134615 0.703125)"/>
+    <use xlink:href="#STIXGeneral-Italic-69" transform="translate(555.1346 -12.525) scale(0.7)"/>
+    <use xlink:href="#STIXGeneral-Regular-29" transform="translate(579.003966 0.703125)"/>
+   </g>
+  </g>
+ </g>
+</svg></dd>
+        </dl>
+        <p>
+          Two things are worth reading off these. An emulating agent's reward tracks the
+          <em>reputation</em> of what it copies, not its own payoff from it. And a prestigious
+          agent's reward sums its <em>followers'</em> payoffs rather than its own &mdash; so once
+          its follower set is the whole population, the behaviour maximizing its prestige is
+          exactly the behaviour maximizing total welfare. That is the mechanism in one line.
         </p>
 
         <h4>Step 1 &mdash; personal utility</h4>
         <p>
           Every agent starts in personal-utility mode, each independently choosing whatever
-          behavior serves it best. Nobody is watching anybody else yet.
+          behaviour serves it best. Nobody is watching anybody else yet.
         </p>
 
         <h4>Step 2 &mdash; emulation</h4>
         <p>
-          One behavior turns out to generate more welfare than the rest, so its reputation
+          One behaviour turns out to generate more welfare than the rest, so its reputation
           climbs. The other agents notice that copying it would pay better than their own
           personal utility, switch to emulation mode, and adopt it.
         </p>
@@ -478,7 +1998,7 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
         <h4>Step 3 &mdash; prestige</h4>
         <p>
           The agent being copied switches mode too. In prestige mode its reward depends on how
-          much its behavior benefits its followers, so it starts choosing whichever behavior
+          much its behaviour benefits its followers, so it starts choosing whichever behaviour
           helps them most &mdash; which is exactly the welfare-optimal norm. Because everyone
           else is still emulating it, that norm then reaches the whole group.
         </p>
@@ -494,10 +2014,10 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
         <p class="tagline">Personal utility alone fails; a leader everyone else emulates does not</p>
         <p>
           Project 02 shows the idea works. This project runs the realistic version: agents keep
-          running estimates of their rewards and reputations, behaviors are parameterized rather
+          running estimates of their rewards and reputations, behaviours are parameterized rather
           than picked from a short list, and every agent has only local, limited information.
           Underneath, an agent is always in one of two modes &mdash; <strong>acting</strong> on a
-          behavior of its own, or <strong>participating</strong> in someone else's &mdash; and the
+          behaviour of its own, or <strong>participating</strong> in someone else's &mdash; and the
           three simulations below are where that distinction actually does the work Project 02
           only sketched.
         </p>
@@ -532,7 +2052,7 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
           <li>
             <span class="policy-key-rule" style="background: var(--opt-3)"></span>
             <b>Leader</b>
-            <span class="policy-key-desc">Follow the highest-reputation behavior</span>
+            <span class="policy-key-desc">Follow the highest-reputation behaviour</span>
           </li>
         </ul>
 
@@ -555,7 +2075,7 @@ est_i(b) = est_j(b) = ( est_i(b) + est_j(b) ) / 2</pre>
                 aria-label="How the simulations work">?</button>
 
         <div class="dynamics-canvas sim-canvas">
-          <svg class="dynamics-svg" viewBox="0 0 1190 720" role="img" aria-labelledby="dynamicsTitle dynamicsDesc">
+          <svg class="dynamics-svg" viewBox="0 0 1000 720" role="img" aria-labelledby="dynamicsTitle dynamicsDesc">
             <title id="dynamicsTitle">Three pastures, three herd-size policies</title>
             <desc id="dynamicsDesc">Three six-by-six pastures run side by side from the same seed and starting grass. In the first, each of four shepherds runs its own personal-utility-maximizing herd size, which together overgrazes the pasture; once a shepherd's herd has starved out it turns its cows back onto the recovering grass, the smallest herd first. In the second, every shepherd is fixed at two cows. In the third, the shepherds start like the first, but one plays an adaptive rule based on the pasture's greenness while the other three switch, one by one, to mirror it. A chart below tracks cumulative grass eaten across all three.</desc>
           </svg>

@@ -57,6 +57,30 @@ Measured (6 runs each, 400 steps, driving the live sim headlessly): 1 cow each
 holds at 89–97% grass indefinitely; 2 holds at 81–87%; 3 dies by step 213–328;
 4 dies by 123–143.
 
+**The death is permanent, and the tagline says so.** Simulation 1 has no
+`regrowBase`, so grass only ever spreads *from* grass — once every tile is
+under `highGrass: 3` there is no seed left anywhere and regrowth is exactly
+zero, forever. Measured at the default 16 head over 30 seeds: the herd is wiped
+at median step 133, leaving median **0% grass and 0 of 36 tiles** at or above
+the threshold; letting each dead pasture then sit for **20,000 further steps
+with no cows on it at all, 0/30 recovered a single level**. This is the
+Simulation 1 counterpart of the "collapse is absorbing" finding in Simulation 3
+(which was measured on `pasture-model.js` at 0.011) — same mechanism, now
+confirmed on the live sim at 0.015. Note Project 03's greedy pasture *does*
+regreen after its herd dies — that is not a contradiction, it carries
+`regrowBase: 0.004`.
+
+That measurement is what picks the tagline word. It reads "The pasture goes
+**barren** due to overgrazing": *barren* means incapable of producing, which is
+exactly the absorbing state, and it is land vocabulary rather than organism
+vocabulary. Rejected along the way — "goes bare" (sounds like something a
+season fixes), "dies" (accurate, but suits an organism more than a place), and
+"withers", which is the tempting one and the wrong one: withering is *drying
+out*, with the plant still present and shrivelled, whereas here the grass is
+eaten away to bare earth (`--grass-bare` is literally commented "bare earth").
+Keep drought vocabulary reserved for Project 03, which actually has drought
+seasons; the pasture card's failure is consumption, not weather.
+
 **The carrying capacity is deliberately set at 2.5 cows per shepherd** — 2 is
 comfortably under it and 3 is over. `regrowPerNeighbour` was raised from 0.011
 to 0.015 to put it there (at 0.011, 2 cows only limped along at 44–78% grass,
@@ -345,8 +369,8 @@ lines, so the card is the same height before and after a run.
 
 **Project 03 uses the same three-row grid as the others** (`.project3-layout`,
 prose in a ~600px column with a card beside it) **but its simulation card
-spans both columns**, because three pastures side by side need the whole page
-width. The section originally had no right-hand column at all, which let the
+spans both columns**, because three pastures side by side need more width than
+one column gives. The section originally had no right-hand column at all, which let the
 prose run the full 1232px measure — **~171 characters a line against ~80
 everywhere else**. Measure line length before judging a layout like this: the
 missing card was the symptom, the unreadable measure was the defect.
@@ -366,32 +390,65 @@ Projects 01 and 02's cards down the page.
 below…" line it styled was deleted from the markup by hand. Left in place in
 case the line comes back.
 
-The simulation card itself is sized from the container, not from a column:
+The simulation card is sized from its drawing, like every other card:
 
 ```
---dynamics-card: calc(var(--max-width) - 48px)   /* = 1232px, .container's 24px padding each side */
+--dynamics-card: calc(1000px + 2 * var(--dynamics-pad) + 2px)   /* = 1042px */
 ```
 
-The drawing inside is `card - 2*pad - 2px` = **1190 wide** (viewBox
-`0 0 1190 620`), which is exactly the `dynamics-svg` viewBox width, so at full
+It used to be `calc(var(--max-width) - 48px)` — the full 1232px page measure —
+which made it both wider than it needed to be and impossible to centre on the
+content above. **It is centred on the prose + key block, not on the
+container.** Those are not the same axis: the key card is centred in its own
+column, so the block above stops `--key-slack` (33px, half the column's spare
+width) short of the grid's right edge, and a container-centred card sits 16.5px
+right of everything above it. The fix is an explicit left margin with the right
+one left to soak up the remainder:
+
+```
+width: min(var(--dynamics-card), 100% - var(--key-slack));
+margin-left: calc((100% - var(--key-slack) - min(var(--dynamics-card), 100% - var(--key-slack))) / 2);
+margin-right: auto;
+```
+
+That degrades on its own — once the row is narrower than the card, the width
+collapses to the block's width and the left margin falls to 0, lining both
+edges up with the block instead. Measured at 1440 / 1280 / 1150 / 1000 / 900 /
+500: centre offset is **0.00px** at every one.
+
+The drawing inside is `card - 2*pad - 2px` = **1000 wide** (viewBox
+`0 0 1000 720`), which is exactly the `dynamics-svg` viewBox width, so at full
 size one user unit renders as one CSS pixel and the SVG's `font-size` values
 *are* the rendered pixel sizes. They were raised to the other cards' scale
 once the card widened — panel titles and stat values 16, subtitles / axis
 labels 12, small labels 11, chart and side titles 13, line-end labels 12.5.
 That is what forced `GRID_Y` from `PANEL_TOP + 58` to `+ 70` and `H` from 600
-to 620: at 12px the panel subtitle ran into the shepherd row. That
-is why widening it meant editing the layout constants in `js/dynamics.js`
-(`TILE 26 -> 40`, `PANEL_W 220 -> 380`, `PANEL_X`, `CHART`, `COW_SCALE 0.32 ->
-0.49`) rather than just letting a 720-wide viewBox scale up — scaling would
-have blown the 9.5-12.5px labels up with everything else. Below 1280px the
-canvas goes fluid (`width: 100%`) and the viewBox scales down; measured at 500
-/ 760 / 900 / 1100 / 1440, no viewport overflows.
+to 620: at 12px the panel subtitle ran into the shepherd row. That is why **resizing it means editing the layout constants in
+`js/dynamics.js`** (`TILE`, `PANEL_W`, `PANEL_X`, `CHART`, `SIDE`,
+`COW_SCALE`) rather than letting the viewBox scale — scaling moves the type
+with it and drops it under the 15.2px floor. `PANEL_W` went 380 -> **316** to
+narrow the card: the widest thing a panel must hold is its subtitle, and
+"Follow the highest-reputation behaviour" measures **304.8px** at the floor
+size, so 316 leaves **5.2px either side**. That was ~10px until the site's
+spelling was normalised to British -our: one extra letter in that one string
+cost ~10px of panel slack, because this subtitle is the binding constraint on
+`PANEL_W`. It still fits, but there is now very little room — **re-measure this
+string before any wording change to the Leader panel's subtitle**, and treat
+adding a word to it as a `PANEL_W` change. The other floor is the side block's note,
+"Harvest rate is the slope of each line above." at 336px, which is why `SIDE`
+is 346 wide (644..990). **Measure the strings before choosing new widths** —
+a `getBBox()` sweep over every `text` in the drawing takes one harness run.
+Below ~1130px the canvas goes fluid (`width: 100%`) and the viewBox scales
+down; measured at 500 / 885 / 985 / 1135 / 1265 / 1425, no viewport
+overflows.
 
 Its controls do **not** follow the other cards' corners: with the chart
-filling the lower third of a 600-tall drawing, the bottom-right corner is
-inside the plot. Fast forward and restart stack in the right-hand margin of
-the third panel instead (`--corner-x: 96%`, `--ff-y: 5%`, `--restart-y: 15%`),
-which is clear of that panel's grid — the grid ends at x 1110 of 1190.
+filling the lower third of the drawing, the bottom-right corner is inside the
+plot. Fast forward and restart stack in the right-hand margin of the third
+panel instead (`--corner-x: 97.6%`, `--ff-y: 18%`, `--restart-y: 27%`), which
+is clear of that panel's grid — the grid ends at x 952 of 1000, and a 34px
+button centred at 976 spans 959..993. That margin is only 48 units wide now,
+so `--corner-x` has to move with `PANEL_W`.
 
 All three of the *other* sections collapse to one column at the same
 breakpoint, `900px`.
@@ -420,7 +477,7 @@ Help popups read their numbers out of `CONFIG` at open time (`data-cfg`,
 ## Type floor in the cards
 
 **Nothing inside a card renders below 15.2px (`0.95rem`).** That number is the
-size of the taglines ("The pasture goes bare due to overgrazing") — and note
+size of the taglines ("The pasture goes barren due to overgrazing") — and note
 that it is *not* what `.commons-visual-tagline` declares: that rule says
 `0.82rem`, but `.card p, .card ul { font-size: 0.95rem }` is (0,1,1) against
 its (0,1,0) and wins. Several other card rules are shadowed the same way
@@ -456,7 +513,11 @@ Grid bottom to the stat value was **2**, value to its label **1**, the chart
 title to the top gridline label **1**, the x-axis number to "time step" **2**.
 Every gap is now 8-16 units (`GRID_Y: PANEL_TOP + 96`, `statsY: + 32` with the
 label at `+ 26`, chart/side titles at `top - 28`, axis labels at `bottom + 22`
-and `+ 50`, side rows on a 48 pitch), and `H` went 640 -> 720 to hold it. The
+and `+ 50`, side rows on a 48 pitch), and `H` went 640 -> 720 to hold it.
+Horizontally, the three readouts under a pasture are on an explicit
+`STAT_PITCH: 86` centred on the panel, not spread across it at `PANEL_W / 3` —
+at the widest values a run reaches (5-digit `eaten`, ~56 units) they still
+clear each other by ~47. The
 panel's accent rule also moved to `PANEL_TOP + 24`: at `+ 20` it sat 2 units
 under the title's descenders and read as an underline rather than a marker.
 Card padding went 18/16 -> 22/20 and `.dynamics-verdict`'s top margin 10 ->
@@ -475,6 +536,15 @@ Card padding went 18/16 -> 22/20 and `.dynamics-verdict`'s top margin 10 ->
   width drives the rail wide and squeezes the drawing.
 - Chart palette: option colours are validated (see below). Teal and amber had to
   step down in dark mode — they were above the dark lightness band.
+- `--danger` (`#b91c1c` light, `#f87171` dark) is the semantic alarm colour, and
+  exists only for `.tagline-danger` — the one word in a tagline that carries the
+  outcome. It is deliberately **not** `--opt-4`, even though that pink was the
+  only red-ish token already defined: `--opt-4` is a *series* colour (shepherd
+  4's cloak, the fixed norm), and the rule that text never wears a series colour
+  applies here too. 6.47:1 on the light card and 6.12:1 on the dark one, both
+  ahead of the muted text it sits inside. Like every other token it is defined
+  in all three palette blocks — miss one and you get the silent/black failure
+  two bullets down.
 - **An undefined custom property is silent in light mode and black in dark
   mode.** `js/norms.js` used `var(--text-primary)` / `var(--text-secondary)`,
   which have never existed — the palette only has `--text` and `--text-muted`.

@@ -10,7 +10,7 @@
 // against the properties that make them worth showing.
 //
 // The toggle under the chart switches between them. In both, two cows is the
-// size that maximises welfare summed across all twenty shepherds — the answer
+// size that maximizes welfare summed across all twenty shepherds — the answer
 // the group ought to reach.
 //
 // The gossip protocol itself is not here yet; this only decides what each
@@ -186,7 +186,7 @@
         ? "Nobody starts out wanting two cows — some swear by one, the rest by three or four. It " +
           "is everybody's second choice, and still the welfare-optimal size."
         : "Each shepherd holds a private view of what a pasture can carry. Three cows leads the " +
-          "vote at the start, but two cows maximises welfare across the group.";
+          "vote at the start, but two cows maximizes welfare across the group.";
     }
 
     modeButtons.forEach((btn) => {
