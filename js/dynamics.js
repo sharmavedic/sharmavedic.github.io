@@ -27,7 +27,7 @@
   // else.
   const N = 6, LEVELS = 6, TILE = 40;
   const GRID = N * TILE;                    // 240
-  const W = 1000, H = 720;
+  const W = 1000, H = 672;
   // 380 was wider than anything in a panel needed: the widest thing a panel has
   // to hold is its subtitle, and "Follow the highest-reputation behaviour" is
   // 295px at the 15.2px type floor. 316 gives that ~10px either side, and the
@@ -45,13 +45,21 @@
                                             // next's.
   const COW_SCALE = 0.49;                   // 0.32 was tuned to TILE 26
   const SHEPHERD_SCALE = 0.42;
-  const STAT_PITCH = 86;                    // centre-to-centre of the three readouts
-                                            // under a pasture; the widest value is
-                                            // ~56 units, so they clear by ~30
-  const CHART = { left: 76, right: 580, top: 470, bottom: 646 };
+  // Two label rows sit above the plot now — the chart title, then the norm
+  // marker's caption — so the titles moved up to `top - 48` and the plot down
+  // 10 units to open a proper gap between them. At `top - 28` / `top - 8` the
+  // two boxes cleared each other by 2 units, against the 8-16 this card's
+  // vertical rhythm is cut to.
+  const CHART = { left: 76, right: 536, top: 422, bottom: 598 };
+  const TITLE_DY = 48;        // title baseline above CHART.top
+  const NORM_LABEL_DY = 12;   // marker caption baseline above CHART.top
   // The stats block fills the width the plot gave up, to the right of a rule.
-  // Its floor is the note along the bottom, 336px at 15.2 — hence 346 of width.
-  const SIDE = { rule: 620, left: 644, right: 990, top: CHART.top };
+  // It used to be 346 wide and carry two columns (rate, starved); it now holds
+  // five — the policy name plus rate / grass / head / eaten — because the three
+  // readouts that sat under each pasture moved in here, so the plot gave up a
+  // further 44 units and the block went to 390. Its other floor is still the
+  // note along the bottom, 336px at 15.2.
+  const SIDE = { rule: 576, left: 600, right: 990, top: CHART.top };
 
   const HERD_COLORS = window.ShepherdSprite.HERDS;
   const ACCENT_VARS = ["--opt-1", "--opt-2", "--opt-3"];
@@ -92,8 +100,10 @@
   let accents = ACCENT_VARS.map((v) => cssVar(v) || "#6366f1");
 
   // ---- Panels --------------------------------------------------------------
-  const STAT_KEYS = ["grass", "head", "eaten"];
-
+  // Panels carry no readouts of their own. grass / head / eaten used to sit in
+  // a row under each grid; they are columns of the side table now, so the three
+  // pastures can be compared down a column instead of across 700 units of
+  // drawing.
   function makePanel(slot, title, subtitle) {
     const x0 = PANEL_X[slot];
     const g = el("g", { class: "dynamics-panel" });
@@ -155,25 +165,6 @@
     const cowGroup = el("g", { class: "dynamics-cows" });
     g.appendChild(cowGroup);
 
-    // One compact stat row under the grid: grass% · head · eaten.
-    const statsY = GRID_Y + GRID + 32;
-    const stats = STAT_KEYS.map((key, i) => {
-      const cx = x0 + PANEL_W / 2 + (i - 1) * STAT_PITCH;
-      const value = el("text", {
-        x: cx, y: statsY, "text-anchor": "middle", "font-size": "16",
-        "font-weight": "600", fill: "var(--text)"
-      });
-      value.textContent = "–";
-      const label = el("text", {
-        x: cx, y: statsY + 26, "text-anchor": "middle", "font-size": "15.2",
-        fill: "var(--text-muted)"
-      });
-      label.textContent = key;
-      g.appendChild(value);
-      g.appendChild(label);
-      return value;
-    });
-
     const sprites = new Map();
 
     return {
@@ -212,19 +203,14 @@
       clearCows() {
         sprites.clear();
         cowGroup.replaceChildren();
-      },
-      setStats(grassPct, head, eaten) {
-        stats[0].textContent = grassPct + "%";
-        stats[1].textContent = String(head);
-        stats[2].textContent = String(eaten);
       }
     };
   }
 
   const panels = [
     makePanel(0, "Greedy", "Everyone plays their own top pick"),
-    makePanel(1, "Fixed", "Two cows, every shepherd"),
-    makePanel(2, "Leader", "Follow the highest-reputation behaviour")
+    makePanel(1, "Leader", "Follow the highest-reputation behaviour"),
+    makePanel(2, "Optimal", "Two cows, every shepherd")
   ];
 
   // The chart is a fixed-width window onto an endless run: it always shows
@@ -238,7 +224,7 @@
   svg.appendChild(chartGroup);
 
   const chartTitle = el("text", {
-    x: CHART.left, y: CHART.top - 28, "font-size": "15.2",
+    x: CHART.left, y: CHART.top - TITLE_DY, "font-size": "15.2",
     "font-weight": "600", fill: "var(--text-muted)"
   });
   chartTitle.textContent = "Grass eaten (cumulative)";
@@ -284,11 +270,45 @@
   xLabel.textContent = "time step";
   chartGroup.appendChild(xLabel);
 
-  const lines = panels.map((panel) =>
-    chartGroup.appendChild(el("polyline", {
+  // The step at which the Leader pasture first has every shepherd on the norm.
+  // Declared before the series so the polylines draw over it rather than under,
+  // and so it reads as an annotation on the plot rather than a fourth line. It
+  // wears `--danger` — the same alarm red as the pasture card's tagline — which
+  // is safe here because it is not a series colour: the rule this card keeps is
+  // that nothing borrows `--opt-N` except the thing that owns it.
+  const normMark = chartGroup.appendChild(el("line", {
+    x1: CHART.left, y1: CHART.top, x2: CHART.left, y2: CHART.bottom,
+    stroke: "var(--danger)", "stroke-width": 1.5, "stroke-dasharray": "4 4",
+    opacity: "0.85"
+  }));
+  const normLabel = chartGroup.appendChild(el("text", {
+    x: CHART.left, y: CHART.top - NORM_LABEL_DY, "font-size": "15.2", "font-weight": "600",
+    fill: "var(--danger)"
+  }));
+  // "the optimal norm", not "the norm": the pasture passes through other
+  // whole-herd settings on the way (everyone on one cow during the repair),
+  // and the marker is specifically the welfare-optimal one — the same two cows
+  // the Optimal pasture plays all run.
+  normLabel.textContent = "Leader reaches the optimal norm";
+  let normStep = null;
+  let normLabelW = 0;   // measured once; the string never changes
+
+  // Slot 1 is the Optimal pasture, and its line is dashed on purpose: it is the
+  // target the other two are measured against rather than another competitor,
+  // and a dashed rule is the conventional way to draw a reference level. The
+  // legend swatch in index.html is dashed to match.
+  const OPTIMAL_SLOT = 2;
+  const lines = panels.map((panel) => {
+    const attrs = {
       points: "", fill: "none", stroke: accents[panel.slot],
       "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round"
-    })));
+    };
+    if (panel.slot === OPTIMAL_SLOT) {
+      attrs["stroke-dasharray"] = "7 5";
+      attrs["stroke-linecap"] = "butt";   // round caps smear a 5px gap shut
+    }
+    return chartGroup.appendChild(el("polyline", attrs));
+  });
 
   const endLabels = panels.map((panel) => {
     const t = el("text", {
@@ -300,11 +320,11 @@
   });
 
   // ---- Side stats ----------------------------------------------------------
-  // Three rows, one per policy, in the space the narrowed plot freed. They
-  // carry what the panels and the chart do *not*: how fast each pasture is
-  // harvesting right now (the slope of its line over the visible window, which
-  // is hard to read off near-flat cumulative curves) and how many cows it has
-  // lost since the run began.
+  // Three rows, one per policy, in the space the narrowed plot freed — the
+  // card's one place where the pastures are read against each other rather
+  // than side by side. `rate` is the slope of each line over the visible
+  // window (hard to read off near-flat cumulative curves); grass / head /
+  // eaten are the live readouts that used to sit under each grid.
   const sideGroup = el("g", { class: "dynamics-side" });
   svg.appendChild(sideGroup);
 
@@ -314,21 +334,27 @@
   }));
 
   const sideTitle = el("text", {
-    x: SIDE.left, y: SIDE.top - 28, "font-size": "15.2",
+    x: SIDE.left, y: SIDE.top - TITLE_DY, "font-size": "15.2",
     "font-weight": "600", fill: "var(--text-muted)"
   });
   sideTitle.textContent = `Last ${START_SPAN} steps`;
   sideGroup.appendChild(sideTitle);
 
-  const RATE_X = SIDE.right - 128, STARVED_X = SIDE.right;
-  [[RATE_X, "eaten / 100 steps"], [STARVED_X, "starved"]].forEach(([x, label]) => {
-    const t = el("text", {
-      x, y: SIDE.top + 20, "text-anchor": "end", "font-size": "15.2",
-      fill: "var(--text-muted)"
+  // Right-anchored column edges, laid out from the right. `eaten` gets the
+  // widest slot because it is the only five-digit value on the card
+  // ("16,019"); `rate` gets the second widest because its header is the long
+  // one. Widen any of these and check the name column still clears the
+  // leftmost value — "Optimal" ends ~664.
+  const COLS = { rate: 786, grass: 852, head: 910, eaten: 990 };
+  [["rate", "eaten/100"], ["grass", "grass"], ["head", "head"], ["eaten", "eaten"]]
+    .forEach(([key, label]) => {
+      const t = el("text", {
+        x: COLS[key], y: SIDE.top + 20, "text-anchor": "end", "font-size": "15.2",
+        fill: "var(--text-muted)"
+      });
+      t.textContent = label;
+      sideGroup.appendChild(t);
     });
-    t.textContent = label;
-    sideGroup.appendChild(t);
-  });
 
   const sideRows = panels.map((panel, i) => {
     const y = SIDE.top + 60 + i * 48;
@@ -336,23 +362,23 @@
       x: SIDE.left, y, "font-size": "15.2", "font-weight": "600",
       fill: accents[i]
     });
-    name.textContent = ["Greedy", "Fixed", "Leader"][i];
-    const rate = el("text", {
-      x: RATE_X, y, "text-anchor": "end", "font-size": "16",
-      "font-weight": "600", fill: "var(--text)"
+    name.textContent = ["Greedy", "Leader", "Optimal"][i];
+    const cells = {};
+    ["rate", "grass", "head", "eaten"].forEach((key) => {
+      const t = el("text", {
+        x: COLS[key], y, "text-anchor": "end", "font-size": "16",
+        "font-weight": "600", fill: "var(--text)"
+      });
+      t.textContent = "–";
+      cells[key] = t;
     });
-    rate.textContent = "–";
-    const starved = el("text", {
-      x: STARVED_X, y, "text-anchor": "end", "font-size": "16",
-      "font-weight": "600", fill: "var(--text)"
-    });
-    starved.textContent = "–";
-    [name, rate, starved].forEach((t) => sideGroup.appendChild(t));
+    [name, cells.rate, cells.grass, cells.head, cells.eaten]
+      .forEach((t) => sideGroup.appendChild(t));
     sideGroup.appendChild(el("line", {
       x1: SIDE.left, y1: y + 18, x2: SIDE.right, y2: y + 18,
       stroke: "var(--border)", "stroke-width": 1, opacity: "0.6"
     }));
-    return { name, rate, starved };
+    return { name, ...cells };
   });
 
   const sideNote = el("text", {
@@ -448,6 +474,30 @@
       endLabels[i].setAttribute("y", ly.toFixed(1));
     });
 
+    // The marker is a point in time, and the chart is a 500-step window onto a
+    // 10,000-step run — so it is only on screen while that moment is still
+    // inside the window, and scrolls off the left like everything else. It is
+    // never clamped to the edge: a marker pinned to the axis would claim the
+    // norm was reached at a step it wasn't.
+    const showNorm = normStep != null && normStep >= xMin && normStep <= lastStep;
+    normMark.style.display = showNorm ? "" : "none";
+    normLabel.style.display = showNorm ? "" : "none";
+    if (showNorm) {
+      const mx = px(normStep);
+      normMark.setAttribute("x1", mx.toFixed(1));
+      normMark.setAttribute("x2", mx.toFixed(1));
+      if (!normLabelW) normLabelW = normLabel.getComputedTextLength() || 285;
+      // The caption sits beside the line where it can, but the plot's edges
+      // win: at 285 units against a 460-unit plot there is a band in the
+      // middle where neither side of the line has room, so it is clamped to
+      // the plot rather than flipped. Anchoring left and clamping the start
+      // keeps the whole box inside on both edges — an earlier flip-only rule
+      // ran the caption out to x -43, well past the axis.
+      normLabel.setAttribute("text-anchor", "start");
+      normLabel.setAttribute("x",
+        clamp(mx + 6, CHART.left, CHART.right - normLabelW).toFixed(1));
+    }
+
     const first = points[0];
     const span = first && last ? last.step - first.step : 0;
     sideRows.forEach((row, i) => {
@@ -484,10 +534,20 @@
       xSpan = n;
       sideTitle.textContent = `Last ${n} steps`;
     },
-    setStarved(counts) {
-      sideRows.forEach((row, i) => { row.starved.textContent = String(counts[i]); });
+    // One call per step, from the sim's sync(). `rate` is not here — it is
+    // derived from the plotted line in drawChart(), so it can never disagree
+    // with what the reader sees.
+    setStats(rows) {
+      sideRows.forEach((row, i) => {
+        row.grass.textContent = rows[i].grass + "%";
+        row.head.textContent = String(rows[i].head);
+        row.eaten.textContent = rows[i].eaten.toLocaleString();
+      });
     },
-    resetChart() { history = []; xSpan = START_SPAN; drawChart(); },
+    // null until the sim sees it happen — never predicted from the schedule,
+    // so the marker cannot sit at a step the pasture did not reach the norm on.
+    setNormStep(step) { normStep = step; },
+    resetChart() { history = []; xSpan = START_SPAN; normStep = null; drawChart(); },
     pushSample(step, values) {
       history.push({ step, values });
       prune(step);

@@ -38,7 +38,7 @@
     moveValue: 0.75,         // Q(move): the fixed opportunity value of walking on
     temperature: 0.08,       // tau: -> 0 is a hard threshold, large is a coin flip
     moveBias: 2.5,           // pull toward greener neighbours; 0 is a blind random walk
-    regrowPerNeighbour: 0.015, // per adjacent tile holding high grass, per step
+    regrowPerNeighbour: 0.012, // per adjacent tile holding high grass, per step
     highGrass: 3,            // a neighbour at this level or above counts as high grass
     moveFraction: 0.55       // share of a step spent walking, the rest standing
   };
@@ -114,7 +114,14 @@
     steps = 0;
     stepClock = 0;
     finished = false;
-    scene.resetGrass(() => (Math.random() < 0.3 ? MAX_LEVEL - 1 : MAX_LEVEL));
+    // Opens at 80% grass (mean tile at level 4 of 5), matching
+    // `startGrass` in js/pasture-model.js so this simulation and Project 03's
+    // three pastures begin from the same condition. The 25/50/25 spread keeps
+    // the mean at exactly 4 while giving the grid some variation.
+    scene.resetGrass(() => {
+      const roll = Math.random();
+      return roll < 0.25 ? MAX_LEVEL - 2 : roll < 0.75 ? MAX_LEVEL - 1 : MAX_LEVEL;
+    });
 
     const sprites = scene.setHerdSize(CONFIG.cowsPerShepherd);
     herd = sprites.map((sprite) => ({

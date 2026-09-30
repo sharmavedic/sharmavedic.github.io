@@ -30,6 +30,9 @@ way.
 | `js/norms.js` | Paired-pasture **scene** (two stacked pastures, weather strip, harvest chart) → `window.normsScene`. **Not currently loaded** — see Simulation 3 note below |
 | `js/norms-sim.js` | Paired-pasture **driver** (seasons + the two norms) → `window.normsSim`. **Not currently loaded**, same reason |
 | `js/leader-emergence.js` | Project 02's **replacement** visual (experimental) — three small autoplaying looping diagrams (no controls, no sim/scene split): personal-utility agents drifting past a fixed spotlight, an opinion leader converging from arrows, then the leader's norm flowing back out. Agents in all three steps are `ShepherdSprite` figures (needs `js/shepherd-sprite.js` loaded first), sized via a shared radius-to-scale helper; Step 3's travelling flow stays a plain dot and always renders behind the agents |
+| `js/hero-frame.js` | The hero photo's **blob builders** — tiny blobs that build a frame around `assets/headshot.jpg`, close red curtains over the finished picture, and open them on the photo in colour with confetti. Autoplaying, no controls, no sim/scene split, like `leader-emergence.js`. Plays **exactly once**, the first time the photo scrolls into view — the `IntersectionObserver` disconnects itself right after, so leaving and returning does not replay it. The entire animation is a pure function of one number — `window.heroFrame.render(t)`, t in 0..1 — which is the only way to inspect a mid-build frame headlessly |
+| `js/commons-lasso.js` | Simulation 1's own tiny blob — the hero photo's builder in a **cowboy hat**, **lassoing the herd-size slider**. Walks in horizontally from the right, stopping just above and a little right of the "1 cow each" label, throws a rope around the real `<input>` thumb, struggles to drag it down, calls in a second blob, and the pair wheeze, slump and leave (back the way they came) if nobody helps — but if the visitor actually drags the slider down themselves while the rope is on, both blobs celebrate and run off instead. Plays once, first scroll into view, same as `hero-frame.js`. Unlike every other decorative scene on the site it is **not** a pure `render(t)` function: its subject is a real form control whose screen position depends on live layout and can move under the visitor's own hand mid-animation, so it drives a small state machine off real elapsed time and recomputes the thumb's position every frame from `getBoundingClientRect()` — see the section below |
+| `js/agents-truck.js` | The **"Building it into agents"** heading (`#agentsHeading`, the Problem section's third `<h3>`) arrives **towed behind a truck**. A blob drives in from off-screen with the real heading hitched to the truck's back, parks, hops out, unhooks it, hops back in and drives off, leaving the heading exactly where it always would have sat. Same blob family, own tokens, plays once — but unlike `commons-lasso.js`'s live form control, the heading's position is measured exactly **once**, before any transform is ever applied to it, and every frame after that only ever offsets from that captured value — see the section below for why that's safe here and wouldn't be for the slider |
 | `js/eaten-metric.js` | The looping diagram in Project 03's `.policy-key` card — one tile, one cow, four phases on repeat: **arrive** (cow walks onto a full tile), **graze** (it eats; the tile fades and a `+1` counts the mouthful), **leave** (cow walks on off the other side), **regrow** (with nobody grazing, the tile eases back to full) — then it loops. Went through two earlier shapes first: a static 2x2 grid with a focus ring moving between frames, then a sliding single-lane filmstrip (Project 02 Step 1-style, one frame visible at a time). Both read as a diagram of four *states*; asked to look like one continuous thing happening to one tile instead, which this is — no grid, no clipping, no multiple frame groups, just one tile and one cow cycling through `render(phase, t)`. The cow is clipped to the tile (`metricCowClip`) so it can walk on/off from beyond the edge without rendering past the frame. Autoplaying, no controls, no sim/scene split, like `leader-emergence.js`, and draws the shared `CowSprite`. Exposes `window.eatenMetric.render(phase, t)` — with `requestAnimationFrame` stubbed, that is the only way to check a mid-animation frame headlessly |
 | `js/dynamics.js` | Project 03 **scene** — three 6x6 pastures side by side plus a shared cumulative-harvest chart → `window.dynamicsScene`. Modelled on the archived `js/norms.js` (same panel/chart drawing approach) but widened to 3 columns and with the weather/season machinery dropped, since Project 03 runs on constant weather |
 | `js/dynamics-sim.js` | Project 03 **driver** (the three herd-size policies + the play/pause/restart/ff/help loop) → `window.dynamicsSim`. See Simulation 4 below |
@@ -47,15 +50,15 @@ state and never touch the DOM except through the scene's published API.
 - `P(eat) = softmax` at temperature `0.08`, and **0 on a bare tile** (always moves)
 - move = weighted pick among ≤4 neighbours, `weight = exp(2.5·f)` (greener pulls)
 - then: energy −0.04; at 0 the cow starves and is removed
-- then: each tile regrows one level with `p = 0.015 × (neighbours at level ≥ 3)`
-  over the 8-neighbourhood — 12% interior, 7.5% edge, 4.5% corner
+- then: each tile regrows one level with `p = 0.012 × (neighbours at level ≥ 3)`
+  over the 8-neighbourhood — 9.6% interior, 6% edge, 3.6% corner
 
 Run **ends** when the last cow starves; it pauses on that frame. Default is 4 cows
 each (16 head), the fastest collapse.
 
 Measured (6 runs each, 400 steps, driving the live sim headlessly): 1 cow each
-holds at 89–97% grass indefinitely; 2 holds at 81–87%; 3 dies by step 213–328;
-4 dies by 123–143.
+survives 6/6; **2 each survives 6/6**; 3 each dies by step 157–227; 4 dies by
+92–117.
 
 **The death is permanent, and the tagline says so.** Simulation 1 has no
 `regrowBase`, so grass only ever spreads *from* grass — once every tile is
@@ -66,7 +69,9 @@ the threshold; letting each dead pasture then sit for **20,000 further steps
 with no cows on it at all, 0/30 recovered a single level**. This is the
 Simulation 1 counterpart of the "collapse is absorbing" finding in Simulation 3
 (which was measured on `pasture-model.js` at 0.011) — same mechanism, now
-confirmed on the live sim at 0.015. Note Project 03's greedy pasture *does*
+confirmed on the live sim (measured at 0.015, unchanged in kind at 0.012 —
+the mechanism is `regrowBase: 0`, not the rate). Note Project 03's greedy
+pasture *does*
 regreen after its herd dies — that is not a contradiction, it carries
 `regrowBase: 0.004`.
 
@@ -81,16 +86,79 @@ eaten away to bare earth (`--grass-bare` is literally commented "bare earth").
 Keep drought vocabulary reserved for Project 03, which actually has drought
 seasons; the pasture card's failure is consumption, not weather.
 
-**The carrying capacity is deliberately set at 2.5 cows per shepherd** — 2 is
-comfortably under it and 3 is over. `regrowPerNeighbour` was raised from 0.011
-to 0.015 to put it there (at 0.011, 2 cows only limped along at 44–78% grass,
-which read as already-overgrazed). Sweeping total head with `setShepherdCount`
-(`regrowBase: 0`, 10 seeds, 400 steps) pins it exactly: 8 head → 87% grass,
-9 → 84%, **10 (= 2.5 each) → 80%, all surviving**, 11 → survives 8/10, 12 →
-dies 0/10. Cumulative harvest over 600 steps peaks at the same place (10 head,
-1207) and falls off a cliff above it (12 head, 542, whole herd dead). The rate
-is a sharp knob: 0.016 already lets 3-each survive 4/10, which would cost
-Simulation 1 its tragedy — don't nudge it without re-running that table.
+**The carrying capacity is deliberately set at exactly 2 cows per shepherd**,
+and `regrowPerNeighbour` is **0.012** to put it there. This is load-bearing for
+the whole site: Project 01's utility tables call two cows welfare-optimal, and
+Project 03 now *labels* its two-cow pasture "Optimal". If the pasture could
+actually carry more than 2, that label would be a lie and the section would
+invite exactly the question it is meant to answer — "why not just let each
+shepherd adapt to the grass?".
+
+Swept over rate x head (8 seeds, 600 steps, `setShepherdCount`, harvest =
+`model.eaten`), the peak sits where the largest reliably-surviving herd is:
+
+| rate | peak at `regrowBase: 0` | peak at `regrowBase: 0.004` |
+|---|---|---|
+| 0.011 | 8 head | 8 head, but wipes out in >=1 of 8 seeds |
+| **0.012** | **8 head, ~95% surviving (38/40), ~78% grass** | **8 head, 83% grass** |
+| 0.013 | 9 head | 9 head |
+| 0.015 (old) | 11 head | 11 head |
+
+At 0.012 the cliff is immediately above 8: 9 head survives only **13/40**
+(`regrowBase: 0`) and 10 head **0/20**. Note 8 head is ~95%, not 100% — an
+earlier note here said 20/20, which was a 20-seed sample of the same ~95%
+band, not a real difference. It reads the same on the page either way, but do
+not treat a single wipeout at 2-each as a regression. 9 head does post a higher raw harvest
+in the runs where it lives, which is the honest shape of overshoot — it pays
+right up until it kills the herd — but it is not a herd size anyone would
+choose, and no *uniform* norm reaches it anyway (a norm everyone plays gives
+4/8/12/16 head, never 9).
+
+The rate is a sharp knob in both directions: 0.013 moves the optimum to 9 and
+0.011 makes 8 itself unsafe. **Do not nudge it without re-running that sweep
+and the Simulation 4 table below** — the "Optimal" label depends on it.
+
+**Pastures do not open full.** A pasture that opens perfect reads as pristine
+rather than as a going concern, and hands every policy a free buffer before
+its choices start to matter. There is a symmetric one-level jitter so the grid
+is not a flat block of one colour, which costs the mean nothing.
+
+**The two cards are deliberately on different openings now:**
+
+| | opens at | set in |
+|---|---|---|
+| Simulation 1 (`#problem`) | **80%** | `resetGrass` in `js/commons-sim.js` (it does not use the model) |
+| Project 03's three pastures | **70%** | `startGrass: 0.7` in `js/pasture-model.js` |
+
+Project 03 was dropped to 0.7 by request. Simulation 1 was **left at 0.8 on
+purpose**: measured over 40 seeds at 600 steps with no seed bank, its
+2-cows-each herd survives **35/40 at a 0.7 opening against 38/40 at 0.8**, and
+that card's whole claim is that two cows each is the size the pasture carries.
+Paying 3 seeds off the headline balance for an opening nobody is comparing
+across sections is a bad trade. If the two are ever unified, re-run Simulation
+1's balance table first.
+
+**Opening lower does not deepen a collapse.** This is the counter-intuitive
+part and it is measured: the level a grazed-out pasture can still climb back
+from is a property of the model (~40% with four head on it, see the recovery
+table in Simulation 4), not of where it started. So a lower opening only
+shortens the fall into that floor — Project 03's Leader dip went from
+80%→46% (a 34-point fall) to 70%→50% (a 20-point fall) — while costing the
+buffer that keeps the overshoot safe, which is why `recoverBelow` had to rise
+from 0.52 to 0.55. If the goal is a more dramatic collapse, a *higher* opening
+is the lever, not a lower one.
+
+**The trap this exposed:** `pasture-model.js` initialised grass in *two*
+places — `create()` and `seed()` — and `seed()` carried its own hardcoded fill
+(30% of tiles one level down, ~94%). Project 03 seeds all three of its
+pastures after creating them, so `startGrass` looked applied and silently was
+not; the live card still opened at 93% while every harness measured 80%. Both
+now call the same `startingLevel()`. **If you add another way to reset the
+grid, route it through that helper.**
+
+Knock-on: the lower opening cost Project 03's leader its buffer. That was
+handled with a faster `switchAt` at the time; the schedule has since been
+replaced entirely by crisis-driven following — see Simulation 4.
 
 **Non-obvious dynamics worth remembering:**
 - Grass spreads only from grass, so *diffuse* grazing is more destructive than
@@ -230,13 +298,122 @@ never claims an outcome that didn't happen), same grazing model as Simulation
   that changes. The result is a boom-bust cycle rather than one collapse: a
   typical 600-step run wipes out around step 250 and is back to full stock by
   step 590.
-- **Fixed** — every shepherd fixed at 2 cows, forever. Project 02/03's
-  recurring baseline norm.
-- **Leader** — starts identical to Greedy. Shepherd 1 plays an adaptive rule
-  from the start (`>= 70%` grass → 3 cows, else 2), re-checked every 20 steps;
-  the other three start at their own personal top pick and switch, one by
-  one, at steps 150 / 300 / 450, to mirror whatever shepherd 1 is currently
-  doing (re-synced every reconsideration, not a one-time copy).
+- **Optimal** — every shepherd at 2 cows, forever. Was called *Fixed* and
+  framed as a baseline; it is now named for what it is, the welfare-optimal
+  norm and the most the pasture carries indefinitely (see Simulation 1's
+  capacity sweep). **Its chart line is dashed** (`OPTIMAL_SLOT = 2` in
+  `js/dynamics.js`, and the legend swatch in `index.html` uses
+  `.policy-key-rule--dashed`), because it is the target the other two are read
+  against rather than a third competitor. **It sits last in the row**, for the
+  same reason — a target belongs at the end of the sequence, not in the middle
+  of it. The on-screen order is therefore **Greedy, Leader, Optimal**, and that
+  order is the single source of truth: `LABELS`, the `models` array, the
+  `makePanel` calls, the side-stats names, the standing's tally string and the
+  legend in `index.html` all follow it, and `models[1]` is the leader pasture.
+  Reordering means moving all of them together — `leaderModel = models[1]` is
+  the one that fails silently if missed, since the sim would happily drive the
+  wrong pasture. Series colour follows *slot*, not policy, so the swap also
+  moved Optimal from teal (`--opt-2`) to amber (`--opt-3`) and Leader the other
+  way; the legend's inline `var(--opt-N)` values have to be moved to match. The rename was asked for precisely
+  so the section stops inviting "why can't each shepherd just adapt to the
+  grass?" — at capacity 2 there is nothing for adapting to find.
+- **Leader** — opens *identically* to Greedy: all four shepherds on their own
+  personal top pick, 13 head against a capacity of 8. Shepherd 1 knows the
+  welfare-optimal norm and drops to 2 at its first reconsideration, but one
+  shepherd destocking barely slows the collapse. The other three follow it
+  only once the pasture has visibly failed, then one at a time `joinEvery: 5`
+  steps apart, mirroring whatever shepherd 1 is currently doing (re-synced
+  every reconsideration, not a one-time copy).
+
+  **Leader finishes below Optimal, and that is the point.** By the time the
+  followers arrive the pasture is grazed down to around 50%. The leader's
+  first instruction is therefore a repair, not the norm: once grass falls
+  under `recoverBelow: 0.55` it calls for `leanCows: 1`, and holds there until
+  the grass is back to `recoverUntil: 0.80` *and* `minRepairSteps: 400` have
+  passed — then returns to 2 for good. The harvest given up
+  during the repair is never won back, so the two lines run parallel
+  afterwards, permanently apart. Adapting to the grass is what the damage
+  *costs* here; it is not a way to beat the norm. That is what makes the
+  section answer "why can't each shepherd just adapt to the grass?" instead of
+  inviting it.
+
+  **Followers are triggered by the pasture, not by a clock** (`joinEvery` +
+  `leanFired`, replacing a `switchAt: {1:60, 2:120, 3:180}` schedule). This is
+  the one to understand before touching any of it, because a clock *cannot* be
+  made to work here: depletion speed varies by seed, so a fixed schedule is
+  never in the right place twice. Measured — at 60/120/180 the herd destocked
+  before the grass fell far (pasture bottomed at a median **65%**, and the
+  repair never fired at all in 6 of 24 runs, leaving Leader level with
+  Optimal); every slower schedule tried (90/180/270, 120/240/360, 180/360/540,
+  250/500/750) bought only a few points of extra median depth and paid with a
+  **1-in-5** chance of tipping the pasture into the absorbing 0% state, which
+  costs ~3,400 starved cows and a **-88%** finish. Triggering on the pasture
+  pins the depth to `recoverBelow` instead of to the dice.
+
+  **The recoverable floor depends on how many cows are still eating, and that
+  is what sets every number here.** Measured by grazing 13 head down to a
+  target level, destocking, and giving the pasture 4,000 steps (16 seeds
+  each, `regrowBase: 0.004`):
+
+  | grass at destock | recovers to 78% with **4 head** (1 each) | with **8 head** (2 each) |
+  |---|---|---|
+  | 65% | 16/16 | 16/16 |
+  | 55% | 16/16 | 9/16 |
+  | 50% | 16/16 | **0/16** |
+  | 45% | 16/16 | 0/16 |
+  | 40% | 13/16 | 0/16 |
+  | 35% | 9/16 | 0/16 |
+  | 30% | **1/16** | 0/16 |
+
+  So the repair must catch the pasture **before the followers settle on two
+  cows** — at 8 head nothing below ~55% ever comes back — and must still leave
+  enough for four head to work with, which runs out around 35-40%. That two-
+  sided constraint is the whole design, and it is why the followers go to
+  *one* cow on joining rather than straight to the norm.
+
+  Three further design points, all measured, all easy to get wrong:
+  - **The repair fires at most once a run** (`leanFired` in
+    `js/dynamics-sim.js`). A re-triggerable threshold does not converge, it
+    flaps: the steady state is ~83% grass, so any threshold near it has the
+    leader oscillating between 1 and 2 cows forever. That variant measured 10%
+    below Optimal but never settled, which reads as a broken policy rather than
+    a learned one.
+  - **`recoverBelow: 0.52` is the floor that is still safe**, and it now sets
+    the depth of the dip the card shows rather than just arming a repair.
+    Swept over 40 seeds: 0.52 bottoms at a median **47%** (worst 37%) with
+    **0/40** pastures hitting zero and zero cows starved; 0.50 is 1/40 and
+    0.55 is 2/40, and a run that goes loses ~3,000 cows. Confirmed on the live
+    card over 60 runs — median trough **46%**, worst **39%**, 0/60 collapses,
+    60/60 alive, zero starvation. Raising it makes the dip shallower, lowering
+    it deeper, and below 0.45 it stops being survivable.
+  - **`watchEvery: 5` is not `reconsiderEvery: 20`.** The leader *looks* every
+    5 steps and *acts* every 20. They have to be separate: at the greedy
+    opening of 13 head the pasture loses roughly **one percentage point of
+    grass per step**, so a 20-step blind spot lets it fall 20 points past the
+    level the leader meant to act at — which, against the table above, is the
+    difference between a recoverable pasture and a dead one. This single change
+    is what took the repair from firing in 9-15 of 24 runs to **24/24**.
+
+  **The gap between Leader and Optimal *is* the length of the repair**, at
+  about 1% of final harvest per 200 steps. That is why the repair has a
+  minimum length at all: on the grass rule alone it lasts ~100 steps, the gap
+  collapses to **-0.09%**, and Leader then *beats* Optimal in 9 of 24 seeds —
+  which breaks the section outright (see the ordering note below). Measured at
+  the 0.7 opening, 24 seeds, full horizon:
+
+  | repair length | red line lands | Leader vs Optimal | below Optimal |
+  |---|---|---|---|
+  | grass rule only (~100) | step 200 | −0.09% | **15/24** |
+  | +200 hold | step 300 | −0.6% | 24/24 |
+  | **+400 hold** | **step 500** | **−1.8%** | **24/24** |
+  | +600 hold | step 700 | −2.6% | 24/24 |
+  | +1200 hold | step 1300 | −5.6% | 24/24 |
+
+  400 was chosen because the chart window is 500 steps wide, so the collapse
+  (~step 30-90) and the red line are on screen together — the whole story
+  readable in one frame. **`recoverUntil` is not the real knob**: 0.70 and
+  0.80 measure identically, because four head crosses both within ~100 steps.
+  The hold is what moves anything.
 
 `regrowBase: 0.004` throughout (Project 02's seed-bank value — without it,
 every policy eventually collapses to 0% grass over a 600-step horizon and the
@@ -258,6 +435,50 @@ reader. `step()` returns early once `finished`, so a hand-driven call (console,
 harness) cannot run past the end and leave the standing quoting a step that
 never happened.
 
+**A red dashed vertical marks the step the Leader pasture settled on the
+welfare-optimal norm** — every shepherd on 2 cows — captioned "Leader reaches
+the optimal norm". The word *optimal* is load-bearing: the pasture passes
+through another whole-herd setting on the way (everyone on one cow during the
+repair), so "the norm" alone would not say which one. It is
+`normMark` / `normLabel` in `js/dynamics.js`, driven by `scene.setNormStep()`
+from `updateNorm()` in the sim, and it wears `--danger`, which is legal here
+because it is not a series colour (the rule this card keeps is that nothing
+borrows `--opt-N` except the thing that owns it).
+
+Three things about it are load-bearing:
+
+- **It is observed, never predicted.** `updateNorm()` runs where the herd
+  counts are actually applied — the follower-join block and the reconsider
+  block — so the marker cannot stand at a step the pasture did not do this on.
+  Deriving it from the repair step + the hold would be close but not exact,
+  since the count only lands on the next reconsideration.
+- **It clears and re-sets rather than latching.** The repair now fires in
+  every run before any follower joins, so in practice the norm arrives once, at
+  a median step **~440**, just after the repair's minimum hold ends. The
+  clear/re-set
+  path is kept because it costs nothing and the ordering is not guaranteed by
+  construction — under the old fixed `switchAt` schedule it genuinely mattered,
+  with 3 of 12 runs reaching 2-each at step 180 and one of those then *leaving*
+  the norm when the repair fired late (set@180, clear@800, set@2000). A latched
+  marker sat at 180 through a stretch the pasture spent on one cow.
+- **It is only visible while that step is inside the 500-step window**, and it
+  is deliberately not clamped to the axis when it scrolls off — a marker pinned
+  to the left edge would claim the norm was reached at a step it wasn't. So in
+  a 10,000-step run it shows for ~500 steps and then goes. If it ever needs to
+  stay, that is a change to what the chart's x-axis means, not a tweak.
+
+The caption is what forced `CHART.top` down 10 units (412 -> 422, `H` 662 ->
+672) with the titles at `TITLE_DY: 48` and the caption at `NORM_LABEL_DY: 12`:
+there are two label rows above the plot now, and at the old `top - 28` /
+`top - 8` their boxes cleared each other by 2 units against this card's 8-16
+rhythm. Measured after the move: 18 units. The caption is 285 units
+wide against a 460-unit plot, so there is a band in the middle where neither
+side of the line has room for it: it is anchored `start` and **clamped to the
+plot**, not flipped. An earlier flip-only rule ran it out to x **-43**, well
+past the axis, once the string grew from "the norm" to "the optimal norm".
+Verified over 60 sampled frames of a sweep: x stays inside 106.8..536.0 against
+a plot of 76..536.
+
 **The chart is a scrolling window, not the whole run.** It shows the last
 `chartSpan: 500` steps: below 500 the axis is 0..500 and the lines grow into
 it; past that the left edge is `step - 500` and the whole plot scrolls. That
@@ -268,15 +489,36 @@ points at full per-step resolution, with no decimation. One sample from
 the axis. Verified at steps 100 / 499 / 501 / 900 / 5000 / 40000: left edge
 tracks `step - 500` exactly and the point count stays at 501.
 
-The plot itself stops at `CHART.right: 700` of 1190, not the full width — the
-right third is a **stats block** (`SIDE`, `js/dynamics.js`) carrying the two
-things neither the panels nor the chart show: each pasture's **harvest rate**,
-computed in `drawChart()` as the slope of its own plotted line over the
-visible window (`(last - first) / span * 100`, so it can never disagree with
-what the reader sees), and its cumulative **starved** count, pushed from
-`sync()` via `scene.setStarved()`. The rate doubles as a check on the model:
-Fixed's 8 head reads exactly 160 per 100 steps, which is `8 x 0.2 x 100` — the
-cow-eats-what-it-burns identity.
+The plot stops at `CHART.right: 536` of 1000, not the full width — the right
+third is a **stats table** (`SIDE`, `js/dynamics.js`), one row per policy and
+four columns: **rate** (`eaten/100`), **grass**, **head**, **eaten**. The rate
+is computed in `drawChart()` as the slope of that pasture's own plotted line
+over the visible window (`(last - first) / span * 100`), so it can never
+disagree with what the reader sees; the other three are pushed every step from
+`sync()` via `scene.setStats([{grass, head, eaten}, ...])`. The rate doubles as
+a check on the model: Optimal's 8 head reads exactly 160 per 100 steps, which
+is `8 x 0.2 x 100` — the cow-eats-what-it-burns identity.
+
+**grass / head / eaten used to sit in a row under each pasture** and moved into
+this table by request, with **starved dropped** at the same time. Three
+knock-ons, all of them measured rather than guessed:
+
+- Panels now end at the grid, so the whole chart/side block moved **up 48
+  units** (`CHART.top` 470 -> 422) and `H` went **720 -> 672**. The `viewBox`
+  literal in `index.html` has to match — `js/dynamics.js` overwrites it at
+  load, so a stale one only shows as a flash before the script runs.
+- `.dynamics-canvas`'s button positions are percentages of that height, so all
+  three were rescaled to keep their absolute positions (224 / 130 / 194 units):
+  `--play-y` 31% -> 33.33%, `--ff-y` 18% -> 19.35%, `--restart-y` 27% ->
+  28.87%. **Any further change to `H` has to redo this arithmetic.**
+- Four value columns need more width than two did, so the plot gave up a
+  further 44 units: `SIDE` is now 390 wide (rule 576, 600..990) against 346.
+  Column right edges are `COLS` in `js/dynamics.js` — rate 786, grass 852, head
+  910, eaten 990. `eaten` has the widest slot because it is the only five-digit
+  value on the card, `rate` the second widest because `eaten/100` is the long
+  header. Measured at step 4,000: no pair of strings in the block overlaps, the
+  longest name ("Optimal", ending 667.5) clears the leftmost header by 40.8,
+  and `STAT_PITCH` — which spaced the old under-panel readouts — is gone.
 
 Line-end values sit **off** their own line rather than beside it: highest
 above, lowest below, and the middle one on whichever side has the larger gap
@@ -299,24 +541,40 @@ minimum would fill the plot and turn it into a recent-*rate* chart; not done,
 because it changes what the chart means. The ceiling is `3 * niceStep(peak/3)`
 so the three grid lines read as round numbers instead of 1667 / 3333 / 5000.
 
-**Measured (60 fresh seeds, at `regrowPerNeighbour: 0.015`, `personalTop:
-[4,4,3,2]` and `greenThreshold: 0.7`; read at step 600, which is where the run
-used to stop):**
+**Measured at `startGrass: 0.7`, `regrowPerNeighbour: 0.012`,
+`personalTop: [4,4,3,2]`, `recoverBelow: 0.55`, `recoverUntil: 0.80`,
+`minRepairSteps: 400`, `joinEvery: 5`, `watchEvery: 5` — 40 fresh seeds
+driving the live card, read at the real `horizon: 10000` (medians):**
 
-| | harvest | outcome |
-|---|---|---|
-| Greedy | 779 | **herd wiped in 60/60 runs**, median step 252 (range 167–447), then restocks — 2.7 re-entries a run, pasture empty for 40% of all steps |
-| Fixed | 968 | survives, 8 head, ~88% grass |
-| Leader | 1355 | survives, 12 head, **0 cows starved in any run** |
+| | harvest | vs Optimal | grass | head | starved |
+|---|---|---|---|---|---|
+| Greedy | 9918 | **−38%** | ~22% | 9 | ~170 |
+| Leader | 15733 | **−1.8%** | 84% | 8 | **0** |
+| Optimal | 16018 | — | 85% | 8 | 0 |
 
-Leader beats Fixed **60/60** (median **+40%**) and Greedy **60/60** (median
-**+77%**). Both hold at a 1200-step horizon, where the greedy cycle has time
-to run twice (6.4 re-entries, 26 cows starved, harvest 1466 against Leader's
-2709 — median +86%) and the leader pasture still loses no cows at all. So the
-leader's oscillation between 8 and 12 head is genuinely sustainable rather
-than an artifact of the followers joining late, and greedy's re-entry rule
-does not rescue it: restocking lifts greedy from 621 to 779 over 600 steps and
-still leaves it below the plain fixed norm's 968.
+Leader's pasture opened at a median 69% (range 64-76%), bottomed at **49%**
+(worst 43%), and **0/40 hit zero, 40/40 survived, zero cows starved**. Leader
+finished below Optimal in **39/39** of the runs where Optimal itself survived,
+in a tight band of −1.6% to −1.9%.
+
+**The one remaining flake is Optimal's own**, and it predates all of this:
+8 head is right at carrying capacity, so the Optimal pasture wipes out in
+about 1 run in 20 (39/40 here; 57/60 measured directly at this opening, 58/60
+at the old 0.8 — i.e. unchanged by the opening). When it goes, the standing
+line correctly reports Leader winning, because it is computed from
+`model.eaten` rather than asserted. Worth fixing one day by giving that
+pasture a little more headroom; not caused by anything in this section.
+
+**The ordering is the claim.** Optimal on top because 2 cows is the optimum and
+nothing can beat it; Leader below it by the cost of its greedy opening, running
+parallel once it has converged; Greedy far below, still boom-busting. An
+earlier cut had Leader *ahead* of Optimal by 0.3% — harvest banked while its
+followers were still greedy — which made the label "Optimal" a lie and is
+exactly what the repair rule was introduced to fix. **If a change ever puts
+Leader back above Optimal, the section has broken, whatever the numbers say.**
+
+Greedy is the only failure case left, and it is a clean one: a third less
+harvest, half the pasture gone, and 167 cows starved over a run.
 
 **Getting Greedy to fail again took a table reorder, not a parameter.** At
 `regrowPerNeighbour: 0.011` Greedy's old `[4,1,2,3]` collapsed on its own. At
@@ -327,17 +585,630 @@ Since the greedy herd is *computed* from the first four rows of
 tops come out `[4,4,3,2]` = 13 head. 13 was picked over 12 deliberately: 12
 head only wipes out in 53/60 runs and drags on to a median step 382, while 13
 fails every time by step ~252 and dries the pasture to 2–6% grass before the
-last cow goes. Nothing else about the population changed.
+last cow goes. Nothing else about the population changed. (Those figures are
+from 0.015. At 0.012 the margin is far wider — capacity is 8 and the greedy
+herd is 13 — so the reorder is no longer what makes Greedy fail; it would now
+fail at 12 head too. The reordered table is kept because Project 01's utility
+tables have to stay fixed anyway, and `[4,4,3,2]` is what they say.)
 
 The greedy pasture then *regreens* over the back half of the run — 83–100%
 grass at step 600 with no cows left. That is the model being honest (regrowth
 resumes once nothing is eating), and it reads well: the commons only recovers
 after the herd that ruined it is gone.
 
-`greenThreshold` is 0.7, moved from 0.8. At the new capacity, 0.65 / 0.70 /
-0.75 all win 60/60 against both rivals, but **only 0.70 gets through all 60
-seeds at both horizons with zero starvation in the leader pasture** (0.65
-loses 1.9 cows a run on average, 0.80 loses 1.7). 0.8 also drops to 59/60.
+`greenThreshold` is 0.7 and **now does nothing** — `greenCows` and
+`brownCows` are both 2, so the leader plays 2 whatever the grass reads. The
+tuning that chose 0.7 over 0.65/0.75/0.8 was done when `greenCows` was 3 and
+is no longer live; it is kept above only as the record of why 0.7 is the
+number sitting in `CONFIG` if the rule is ever switched back on.
+
+## Hero photo (`js/hero-frame.js`)
+
+**A sequence authored beat by beat to a spec, in parts.** Five parts, 62.3s of
+beats played at `PACE: 0.65` = **~40s**. It is finished as a piece: the photo
+opens desaturated, the frame is built around it, curtains close over it and
+draw back on the photo in colour with confetti outside the frame. **Plays
+exactly once** — the `IntersectionObserver` in the playback section at the
+bottom of the file disconnects itself right after the first `play()`, so
+scrolling the photo out of view and back does not restart it. An earlier cut
+replayed on every scroll-into-view, which read as a looping gimmick rather
+than a one-off flourish.
+
+*Part one (0-13.5s)* — opens on a blank transparent square with a thin
+boundary. Blob A walks on with a brick a quarter of the frame wide, sets it
+bottom-left, hammers both ends, repeats twice. Once A's first brick is nailed,
+blob B walks on with a vertical brick carried flat, heaves it upright onto the
+corner brick with visible effort, lets it rock and damp out, blows a relieved
+"phew", and nails its base.
+
+*Part two (13.6-22.4s)* — course two of the left column is out of reach, so B
+fetches a ladder, stands it against the column and climbs. Blob C, a hod
+carrier, passes the next brick up; B takes it out to its right, and it turns
+from flat to upright **as it rises** before sliding sideways into the column.
+A runs its fourth and last bottom brick through that hand-off.
+
+*Part three (22.6-41.6s)* — B comes down; B and C fetch a brick each and lay
+them end to end on the floor, then hammer the seam to join them. A arrives
+with a crane truck, telescopes its mast up and runs the jib out; B and C hook
+the joined beam on; it is lifted, swings upright on the way up, traverses left
+and seats on the column, completing the left side to the top corner. C goes up
+the ladder and nails the joint at y 168 — the midpoint of the frame's left
+side.
+
+**The beam is a rigid pair.** Both halves take the *same* transform, expressed
+as "where is the attach point, and how is the piece rotated about it"
+(`BEAM_ATTACH`, `poseBeam`). Giving each half its own attach point is what left
+a gap on the floor: the transform is rigid-body, so a piece's position comes
+from its own geometry, not from where you aim the anchor. `BEAM_PIECE_CX` is
+*derived* from that transform rather than restated — rotating -90 about the
+attach maps a final y-offset to an x-offset of the same size.
+
+**The crane is a mast-and-jib, not a swinging boom.** The hook then sits
+directly above the load at every moment, which is both physically honest and
+far easier to read at this size; a boom long enough to reach from a parked
+truck to the top-left corner would have been longer than the frame is tall.
+Mast telescopes first, jib runs out second — a jib growing out of a
+half-raised mast looks like a bug rather than a machine. Hanging the beam from
+a point near its *top end* is what makes it swing upright on its own as it
+lifts, which is the whole reason the lift reads as a lift.
+
+*Part four (41.8-52.8s)* — a cursor flies in, presses on the left wall and
+drags a **copy** of it across to the right; the blobs run for it, and the
+travelling wall shoves the ladder and the crane off the field ahead of itself.
+Then two winged blobs fly the lintel down and close the square.
+
+**The right column is built from the left column's own courses**
+(`leftBricks.concat(beamBricks).map(...)`), not from fresh numbers, so it stays
+a copy if the left side is ever re-cut. It starts the drag sitting exactly on
+top of the original at 82% opacity — that is what makes it read as pulling a
+duplicate off rather than as a new object appearing.
+
+**Pushed things need a `gain`, not just a lead.** `shove(x, lead, gain)` moves
+an object only once the wall's leading edge reaches it, and then skids it ahead
+*faster* than the wall. At gain 1 the wall has only ~300 units of travel to
+give, which parked the ladder half in shot at the right-hand edge for the rest
+of the run. The crane needs the bigger gain (1.9 against the ladder's 1.5)
+because its jib reaches back almost to the left wall, so the body has to travel
+a full frame-width past the edge before the jib stops showing.
+
+**The flyers carry the lintel overhead, like every other blob carries a
+brick.** Slinging it above them put them off the top of the drawing for most of
+the descent — there are only 22 units between the frame's top and the edge of
+the box, and a blob is 17 tall. Carrying it this way also puts them inside the
+opening, where there is room. They leave by fading on the spot with a small
+drift rather than flying off: the square is closed by then, so any real exit
+path goes through a wall, and the fade is front-loaded so they are all but gone
+before the drift takes them near one.
+
+*Part five (53.2-62.3s)* — red curtains sweep shut across the finished frame,
+**hold closed for 2s** (`P5.close` ends 55.0, `P5.open` now starts 57.0 — was
+0.7s, asked to be "a little longer"), then draw back while the photo comes
+from grayscale to colour and confetti fires up outside the frame from the two
+top corners. The hold length is the gap between `close[1]` and `open[0]`
+alone — `open`'s own duration and the confetti runway after it are unchanged,
+just shifted later by the same amount, which is why `open` and `TOTAL` both
+moved by +1.3s rather than only `open[0]`.
+
+**The photo is the opening shot, not a blank square**, desaturated via
+`photo.style.filter` set from `render()` on every frame — one expression tied
+to the curtain beat, so the colour can never disagree with where the curtains
+are. Set from **script, not the stylesheet**: with JS off, or under reduced
+motion (where the overlay is removed outright), the photo must simply be
+itself, in colour. There is no `.hero-photo--building` rule any more.
+
+**The view is wider than the drawing.** Coordinates are unchanged — the frame
+still lives at 22..338 in a 360 field — but the `viewBox` is inset by
+`VIEW_MARGIN: 60` on every side so there is somewhere outside the frame for
+confetti to fly and for the ladder and crane to be shoved to. Widening the
+*view* rather than re-basing every constant is what kept parts one to four
+untouched; re-basing would have meant re-deriving `LADDER_BASE`, `PARK_X`,
+`BEAM_FLAT`, `MAST_TOP` and a dozen crane body offsets.
+
+That widening costs one thing: between the hero's 720px breakpoint and about
+1100px the photo sits near the content's right edge, and the overhang pushed
+the page into a horizontal scroll (measured: 31px at 1000, 52px at 900).
+`.hero` therefore carries **`overflow-x: clip`** — `clip` and not `hidden`,
+because `hidden` on one axis forces the other to `auto` and would make the
+hero a scroll container. Confetti is cut off at the content edge at those
+widths, which is the right degradation. **Re-measure scrollWidth at 900 and
+1000 if `VIEW_MARGIN` ever grows again.**
+
+**Curtains cover a square a little larger than the frame, not flush with it.**
+Each panel spans `CX0..CX1` / `CY0..CY1`, which pad `OUT..FAR` out by
+`CURTAIN_PAD: 24` on every side — first cut flush with the brickwork (and,
+before that, hung only in the frame's opening), both of which left a sliver
+of frame or wall showing at a fully-closed beat and read as "curtains behind
+a window" rather than "curtains drawn across the whole picture".
+
+**There is no wrapping scale transform — every panel is rebuilt from scratch
+each frame**, because the geometry it needs (see next) can't be expressed as
+one uniform scale. `poseCurtains(sxTop, sxBottom, t)` takes two closedness
+values, not one: `sxTop` drives the top edge directly, `sxBottom` is the same
+`curtainDrive()` curve evaluated `CURTAIN_LAG` (0.5s) *earlier*, so the top of
+each panel is always further along than the bottom. The leading edge is a
+single `Q` curve between the two resulting x-positions rather than a straight
+line, which is what bows it into the V-shape visible mid-motion — asked for
+as "move the top part, the bottom should flow behind" — and every pleat
+follows the same lagged interpolation at its own fraction across the panel's
+width, so the whole fold pattern slants together instead of the panel
+appearing to slide as one rigid sheet with a separately-animated print on it.
+The hem is still scalloped (quadratic arcs along the bottom, `CY1`) rather
+than cut off flat, because a curtain has weight and pools.
+
+**Colour is velvet, not flat red — a dark base, a near-black shadow fold, and
+a warm pink-red `--hero-curtain-shine` fold**, with `hash(i, side + 60)`
+picking roughly 40% of each panel's nine pleats to render in the shine colour
+instead of the shadow one. A single fold colour read as "red plastic"; the
+alternation of dark and lit rounded pleats is what reads as fabric catching
+the light. Width, bow depth, spacing jitter, shine-or-shadow pick and opacity
+per pleat all come from `hash(i, side + salt)` — deterministic, not
+`Math.random`, for the same replay guarantee as the confetti below — which is
+what keeps nine folds from reading as one repeated stamp. The bow itself
+sways on `Math.sin(t * 1.4 + phase)`, still driven by the raw seconds value
+rather than by closedness, so the sway keeps moving through the held-shut
+beat rather than freezing solid once a panel stops travelling.
+
+**Confetti is deterministic** — a hash of the piece index, never
+`Math.random` — so a replay is identical and a screenshot of a given beat is
+reproducible. Simple ballistics (`CONFETTI_G`) from the frame's two top
+corners, outward and up, then falling through the margin.
+
+**Hammer speed is a rate, not a count.** `blows(a, b)` derives the number of
+strikes from the length of the beat at a single `HAMMER_HZ`. Hand-written
+per-site counts had A hammering at ~9 blows a second and B nailing at 3.5,
+which read as two different characters rather than two blobs doing the same
+job. Never write a literal swing count.
+
+**C does the final nailing, not B.** At the hook C stands left of B, and the
+two cannot trade places: whichever walks to the ladder's foot passes straight
+through the other. Handing the job to whoever is already nearer the ladder is
+the fix; re-timing it is not, and two attempts at staggering both failed.
+
+The photo is 300x300 and the SVG is 360x360 inset -30px, so one user unit is
+one CSS pixel and every constant in the file is literal pixels — the same trick
+the simulation scenes use. `.hero-photo` needs `position: relative` to anchor
+it, and the overlay is `pointer-events: none`.
+
+Geometry: frame band at 22..34 against a photo at 30..330, brick = SPAN/4 = 79,
+`FLOOR` = 326. **The builders stand on `FLOOR`**, which is the top of the bottom
+run, so a brick they set goes down at their feet and the left column stacks up
+from the corner brick they are standing on.
+
+**Everyone works on one line (`FLOOR`), so lanes are the hard constraint** —
+and this is where every bug in this file has come from. Two rules:
+
+1. **A blob may never walk through a standing brick.** It reads as a bug, not
+   as a shortcut. In part one A entered from the left and walked straight
+   through the column B had just stood up; in part two B's ladder trip did the
+   same thing. Both now use the right-hand approach.
+2. **The right-hand approach is single file.** Only one blob may be travelling
+   it at a time, which is what fixes the *timings*: A's third brick is clear by
+   13.5, B goes out and back for the ladder 13.6-15.9, C walks on at 16.2, A's
+   fourth brick starts at 18.1. That is also why `A_STARTS` is an explicit
+   array (`[0, 4.6, 9.2, 18.1]`) rather than `i * CYCLE` — the fourth cycle has
+   to wait for the lane, and it then runs right through B's hand-off, which is
+   what "A carries on with the last brick" is supposed to look like.
+
+**There is a headless audit for exactly this** and it must be re-run after any
+re-timing: sample `render()` every 0.05s across the whole run, and check (a) no
+two visible blobs are within 11 units in x and 12 in y, and (b) no blob box
+overlaps a *placed* column brick. Both currently report **none**. Eyeballing a
+contact sheet will not catch a 0.2s pass-through — the audit caught three that
+screenshots did not, and it also surfaced a `ReferenceError` living in a part
+two branch that the part three diagnostics never entered, because it walks the
+whole timeline rather than the beats you happen to think about.
+
+A companion audit worth re-running when tokens change: collect every
+`var(--x)` across `js/` and `css/` and diff against the names defined in the
+palette blocks. An undefined custom property is silent in light mode and
+**black** in dark. It caught the crane truck rendering black because an edit
+threw before writing and the light block never got `--hero-vehicle`. Note it
+reports `--rule-color` as undefined; that one is a false positive, set inline
+on the element in `index.html`.
+
+Other things that are load-bearing, each of which was wrong first:
+
+- **Entry points sit inside the SVG box** (`ENTER_A`/`ENTER_B`, +12 / -10
+  against a frame spanning 22..338 in a 360 box). The overlay sits above the
+  photo and so cannot be clipped by it; walking on from -40 painted blobs and
+  bricks over the hero text. The SVG is `overflow: hidden` for the same reason.
+- **Bricks are carried flat and turned upright at the last moment.** Carried
+  already-upright the first one read as clutter lying across the bottom-left
+  corner, and the heave had nothing to show. In part one the tilt finishes
+  ahead of the travel so the last of the effort is pure lift.
+- **On the ladder, B takes the brick out to its right, not overhead.** Stood
+  upright at an overhead hand position the brick landed *inside the ladder
+  rails* and disappeared behind them (bricks are drawn before the ladder).
+  Out at `topPt.x + 20` it turns up in clear air and then slides sideways into
+  the column — which also reads more like bricklaying than juggling. The turn
+  and the slide overlap only slightly (turn over the first 45%, slide from
+  35%); doing both together swung it through a wide arc across the opening.
+- **The ladder's origin is its base centre with rails running up in -y**, so
+  placing it is one translate plus one rotation: `rotate(90)` carried flat,
+  `LADDER_LEAN` (-7.7°) stood up. `ladderPoint(p)` returns where a climber's
+  feet sit at p of the way up, and is the single source of B's position for
+  the whole climb — do not re-derive it.
+- **Reduced motion removes the overlay outright** rather than freezing it at
+  t = 1. A half-built frame is a coherent *moment* and an incoherent *still*,
+  so the honest static state is the *finished* photo — full colour, crisp
+  edges — not a frozen mid-build frame and not the grayscale opening shot
+  either. That took an explicit reset: `photo.style.filter` is set to
+  grayscale unconditionally near the top of the file, before the reduced-
+  motion check ever runs, so the reduced-motion branch has to clear it (and
+  the mask, next) back to nothing itself rather than assume it was never set.
+- **The edge fade is for the build, not the finished piece — and the swap
+  to crisp happens behind the closed curtain, not at full reveal.**
+  `.hero-photo img`'s mask (see Gotchas) feathers the photo's edges so it
+  blends with the blobs and bricks being assembled around it; the finished
+  piece gets a crisp square edge instead. `render()` toggles
+  `photo.style.maskImage` / `webkitMaskImage` to `"none"` at `s >=
+  P5.close[1]` — the instant the curtains finish *closing*, while the photo
+  is fully hidden — not tied to `revealed`/the colour transition the way a
+  first cut had it. That first cut left the edge soft for the entire
+  draw-back and only snapped crisp on the very last frame of the reveal,
+  which read as a glitch happening in full view rather than a clean
+  discovery; doing the swap while nothing is visible means there is no
+  moment for a visitor to catch it happening at all.
+
+Colours are its own tokens (`--hero-frame`, `--hero-frame-edge`,
+`--hero-worker`, `--hero-worker-dark`, `--hero-worker-eye`, `--hero-hat`,
+`--hero-hammer`, `--hero-puff`, `--hero-drop`, `--hero-ladder`,
+`--hero-curtain`, `--hero-curtain-fold`, `--hero-curtain-shine`,
+`--hero-outline`) across all
+three palette blocks — the rule that nothing wears a series colour (`--opt-N`)
+but the series that owns it applies to decoration too. The eye dot *lightens*
+in dark mode; a near-black dot on a dark-mode grey blob disappears.
+`--hero-outline` was asked for as "thin white": white is invisible on the light
+page ground (#f7f7f8), so light mode uses the lightest neutral that still reads
+as a drawn line and dark mode gets the white.
+
+Timeline lives in `A` (four brick cycles off `A_STARTS`), `B` (the first
+heave), `B2` (ladder, climb, take, place, tap), `C` (the hand-off), `P3` (the
+crane act) and `P4` (the drag and the flyers), in **seconds**, with `TOTAL` derived and `render(t)`
+taking 0..1 across it. `PACE` scales playback without touching a single beat; it is
+**0.65**, so 61s of authored beats play in ~40s. Author in real seconds and
+let `PACE` do the compression — never re-time the beats to change the length. Parts three, four and five are separate
+`renderPartThree()` / `renderPartFour()` / `renderPartFive()` that the main
+`render()` early-returns into, newest first: each repaints the finished work itself and
+owns all the blobs, and the part one/two chains are one long if/else per worker
+that do not compose.
+Authoring in seconds and deriving the normalised time is what makes the beats
+tweakable; do not invert that.
+
+**Headless traps, both already paid for:**
+- Screenshotting a hand-driven frame on the real page needs
+  `requestAnimationFrame` stubbed *before* `js/main.js` in the markup.
+  Otherwise playback starts, rAF fires its ~2 headless ticks, and your
+  `render(x)` is silently overwritten by a callback at t≈0 — which looks
+  exactly like the animation failing to draw.
+- Give the screenshot window real room. The frame's bottom run sits at page
+  y≈336-348 in these harnesses; a 390px-tall window clips it and the montage
+  reads as "the bottom bricks never appear". Verify positions with
+  `getBoundingClientRect` before believing a screenshot.
+
+## Simulation 1's slider blob (`js/commons-lasso.js`)
+
+A second, independent decorative animation, triggered by the same "photo
+scrolls into view, plays once" pattern as `hero-frame.js` (its own
+`IntersectionObserver`, disconnected right after first play — the two do not
+share state). One blob lassoes the herd-size slider's real thumb and tries to
+drag it toward fewer cows; when it can't, it calls in a second blob; the pair
+wheeze, slump and leave if nobody helps. If the visitor drags the slider down
+themselves while the rope is attached, both blobs celebrate and run off
+instead.
+
+**This is deliberately not a pure `render(t)` function, unlike every other
+scene on the site.** Its subject — the native `<input type=range>` thumb — has
+a real screen position that depends on live page layout and can be moved by
+the visitor mid-animation; there is no way to author "where the thumb is" as
+a timeline constant the way a brick's position can be. So it drives a small
+state machine off real elapsed time (`performance.now()`), and every frame it
+re-reads `input.getBoundingClientRect()` and `input.value` to find the
+thumb's live position — which is also what lets the celebrate branch simply
+work: nothing has to be told the thumb moved, the next `tick()` just sees it.
+
+**The blob is the hero photo's builder, copied wholesale, not a new
+character.** `makeBlob()` reuses `hero-frame.js`'s exact leg/body/arm/eye
+numbers (same `cy: -9.5, rx: 6.4, ry: 6` body, same single arm pivoting at
+`4.6 -10.9`), asked for explicitly after a first cut invented its own
+slightly-different proportions — reusing the real numbers is what makes it
+read as the same character turning up a second time on the page rather than
+a lookalike. The one swap is the hat: a wide brim ellipse plus a pinched
+dome path stand in for the hard hat's flat rect and low dome, because here
+the blob is wrangling a slider, not laying bricks — colour alone couldn't
+have sold that, the silhouette had to change. Its own tokens,
+`--commons-hat`/`--commons-hat-fold`, not `--hero-hat`, for the same reason
+the body tokens are `--commons-blob*` and not `--hero-worker*` — nothing
+borrows a token from a scene it isn't part of, even when the drawing is a
+literal copy.
+
+**The stand point is anchored to the "1 cow each" label, not to the thumb —
+entry is horizontal, the rope does the reaching.** Two earlier cuts tied the
+blob's position to the thumb directly: one stood it beside the thumb and had
+it enter sideways, the other stood it below the thumb and had it walk up from
+the bottom of the card. Both moved the *blob* to wherever the thumb happened
+to be, which is backwards — asked for explicitly as "come in horizontally
+... stop a little to the right of the 1 cow each text": the blob walks in
+from the right (`offRight`, `stage width + 30`) along a fixed height just
+above that label (`STAND_DX`/`STAND_DY` past its `getBoundingClientRect()`)
+and *stays there* for the whole scene, however far the thumb travels. The
+rope is what reaches the thumb, not the blob's feet — which is also why the
+rope reads as "slightly off vertical": the stand point is offset to the
+right of the track by construction (the label sits in the same narrow rail
+column as the track, a little wider), so the line from hand to thumb is never
+purely vertical even before anyone pulls on it. Leaving reverses the same
+horizontal lane back out to the right, so entry and exit match.
+
+**The arm angle is computed from real geometry (`aimArm()`), not a fixed
+constant, because the blob no longer sits directly under or beside its
+target.** A fixed "point straight up" angle was fine when the blob's stand
+position tracked the thumb's own x; once the stand point is fixed and the
+thumb can be anywhere on the track, the arm has to aim wherever the thumb
+actually is. `aimArm(x, y, tx, ty)` is a plain `atan2` from the shoulder to
+the live thumb position, recomputed every frame the same as the hand point
+already was — this is also what keeps the arm aimed correctly if the
+visitor drags the thumb to a new spot mid-pull.
+
+**Straining is a lean, not a slide.** The first cut moved a pulling blob's
+whole `(x, y)` a few units along `awayFromThumb()`, which read as the figure
+sliding across the ground rather than pulling against something — asked
+directly not to do that ("don't move their whole body, but rather slant
+them"). `poseBlob()`'s `lean` now rotates the *entire figure* around its own
+feet (the node's local origin, `translate(x, y) rotate(lean)` — rotate runs
+second so it turns around the already-translated point), which keeps the
+feet planted exactly on the stand point while the body tips back along the
+rope's line. `leanTowards(dir)` derives the angle from `awayFromThumb()`'s
+own direction vector (`atan2(dir.x, -dir.y)`, "up" as the zero reference,
+clamped to ±20°) scaled to only 50% of full alignment — a blob fully
+rotated to match the rope's angle reads as falling over, not straining.
+`handPoint()` had to learn about `lean` too: the arm rotates *with* the
+figure, so the hand's final position needs the lean applied on top of the
+arm's own rotation, or the rope would visibly detach from the hand the
+moment a blob leans.
+
+**Effort shows on the face: round eyes swap for angled `>` `<` ones,
+scaled by how hard the current tug actually is.** `eyeStrain` is a second
+pair of chevron paths layered under the normal round eyes, vertices pointing
+inward toward the centre — the universal "straining" cartoon read. Driven by
+`o.strain` (0..1) in `poseBlob()`, which fades the round eyes out as the
+chevrons fade in, so it's one continuous cross-fade rather than a hard swap:
+a blob resting between tugs has ordinary eyes, a blob at the peak of a pull
+has fully angled ones.
+
+**The thumb itself dips a few pixels on the hardest pulls — just the thumb,
+not the track it rides on.** Asked for directly — "make the [thumb] go
+slightly down when they pull on it", then refined to "just the slider circle
+thing, not the entire base". The only safe way to move it at all without
+touching the actual herd-size value (which would silently change what the
+visible simulation is doing) is a cosmetic nudge; the first cut applied that
+nudge as a transform on the whole `<input>`, which moved the track along
+with the thumb since the track *is* the input's own box. The fix lives in
+`css/style.css`: `.commons-slider::-webkit-slider-thumb` /
+`::-moz-range-thumb` read a `--thumb-nudge` custom property
+(`transform: translateX(calc(-1 * var(--thumb-nudge, 0px)))`), and
+`nudgeThumb(px)` in the JS does nothing but
+`input.style.setProperty("--thumb-nudge", ...)`. Custom properties inherit
+into pseudo-elements, so setting it on the `<input>` is enough to reach a
+part of the DOM script has no direct handle to. The axis is still
+`translateX`, not `translateY`: the thumb pseudo-element lives inside the
+same pre-rotation local frame as the whole slider (rotated -90deg as a unit,
+see Layout), so a local X offset is what becomes a screen-space *downward*
+nudge once that rotation is applied — the same maths as the first cut, just
+scoped to one pseudo-element's transform instead of the input's own.
+Verified directly in a headless harness: `input.getBoundingClientRect().top`
+now stays exactly put (127 before and during a pull hold) while
+`--thumb-nudge` reads `4px` at the hold's peak, confirming the track itself
+no longer moves.
+
+**The rope has to add the same nudge itself, since `thumbClientPos()` can't
+see it.** `getBoundingClientRect()` on the `<input>` reports the *track's*
+box, which the fix above deliberately stops moving — so during a pull,
+`tyN = ty + strain * NUDGE_MAX` is computed alongside the nudge and used for
+every piece of thumb-relative geometry that frame (`aimArm`, `awayFromThumb`,
+the rope's own endpoint, the loop's centre), rather than the raw `ty`. Miss
+this and the rope stays aimed at the thumb's resting position while the
+thumb itself visibly dips a few pixels below it.
+
+**Pulling oscillates, then holds at full strain, before whatever happens
+next** — asked for as "hold the pulling pose longer before the let go".
+`tugWave(p, holdFrac, amplitude)` runs a normal sine for the first
+`HOLD_FRAC` (0.65) of the beat and then pins the value at `amplitude` for
+the rest: several real tugs, then one sustained hard pull, rather than an
+even oscillation cut off arbitrarily. The oscillating part runs exactly 4.5
+cycles so it always lands on a peak right as the hold begins — an integer
+cycle count would let the hold pick up mid-swing, visible as a jump.
+`giveUp` eases `lean` and `strain` back to neutral from that same held
+maximum (`leanTowards(dir)` and `1`) rather than from an arbitrary
+in-progress tug value, since the hold guarantees that's genuinely where they
+were a moment before letting go.
+
+**There's a `wheeze` phase between `giveUp` and `leave`** — asked for
+directly, "a wheeze / give up / looking down sort of animation before they
+leave". `giveUp` already relaxes the rope and the straining pose; `wheeze`
+is the beat of visibly being beaten that follows it, before the walk cycle
+picks back up. Three things layer together, all driven by one `intensity`
+value that ramps in over the first 15% of the beat, holds, then eases back
+out over the last 20% (so nothing snaps against `giveUp` before it or
+`leave` after it):
+- `lean` holds a gentle constant forward droop (9°, not derived from the
+  rope direction this time — they've already let go, so there's no rope
+  line left to lean along) for the downcast, looking-down half of the ask.
+- `heave` oscillates a sine (2.6 cycles across the beat) through a new
+  `poseBlob()` parameter that scales the body vertically *around its own
+  centre* (`translate(0 -9.5) scale(1 s) translate(0 9.5)`, not around the
+  node origin — scaling from the feet would also slide the body up and down
+  bodily, which reads as bouncing rather than a heaving chest) for the
+  wheeze itself.
+- `tired` flattens `eyeGroup` (the two round eyes, now wrapped together
+  specifically so they can be rescaled as one unit) toward half-shut the
+  same way, anchored on their own `cy` so they sink in place rather than
+  sliding down the face; `pant` swaps the mouth from the flat smile curve to
+  an open "o" sized off the same `heave` value, so it visibly huffs in time
+  with the chest instead of just sitting open.
+
+**The slider is a horizontal `<input>` rotated -90deg in CSS** (see the
+Layout section for why), and `getBoundingClientRect()` reports the box
+*after* that rotation — min (value 1) lands at the bottom, max (value 4) at
+the top, matching the "1 cow"/"4 cows" labels either end of the rail. That is
+most of the trick in `thumbClientPos()`: no need to know anything about the
+rotation, only to read the transformed rect and interpolate value fraction
+against its height.
+
+**The interpolation has to inset by the thumb's own radius, or the lasso
+loop lands off-centre at either end of the track.** A range thumb's *centre*
+never reaches the raw edges of its track — like any such input, half the
+thumb's own width is reserved at each end so it can't hang off — so the
+first cut (`r.bottom - t * r.height`) put the loop up to a whole `THUMB_R`
+(10) off the real thumb at value 1 and value 4, tightening only in the
+middle of the travel. `thumbClientPos()` now insets both ends by `THUMB_R`
+before interpolating (`bottom - t * (bottom - top)` against the *inset*
+`top`/`bottom`), which is what "perfectly wraps" the thumb at every value,
+not just near the middle — verified by screenshotting the loop against the
+thumb at value 4 (the default) and confirming they're concentric.
+
+**The loop itself closes in, rather than fading in already fitted.** During
+`throw`, `rope.loopNode`'s radius eases from `THUMB_R + 16` down to `LOOP_R`
+(11.5, just outside the real 10px thumb) over the back half of the beat —
+asked for as "it should perfectly wrap around the circle", which reads as
+the rope actually landing and cinching down, not a ring that simply appears
+pre-sized. It's a real `<circle>`, not the ellipse the first cut used, since
+a lassoed circular thumb wants a loop that is actually circular.
+
+**The overlay is `position: fixed` on `document.body`, not a child of the
+card.** A scene positioned relative to the card would be clipped by anything
+the card or its ancestors set `overflow: hidden` on, and would need scroll-
+offset math to place correctly. Fixed positioning sidesteps both: every frame
+recomputes the stage's `getBoundingClientRect()` (viewport-relative, exactly
+what `position: fixed` wants) and repaints the `<svg>` at that rect, so the
+overlay tracks the card through scrolling for free, with `pointer-events:
+none` throughout so it can never eat a click on the real slider.
+
+**"Pulling" moves the blob, never the real thumb.** Faking a few pixels of
+give on the actual `<input>` would mean fighting the browser's own thumb
+rendering and risks it visually fighting a real drag if the visitor grabs it
+at the same moment. Instead the blob's own stance steps back and leans during
+`pullA`/`pullBoth`, stretching the rope taut between a live-computed hand
+point and the live thumb position — the struggle reads through the blob's
+body language, not through the control moving.
+
+**The celebrate branch only arms once the rope is on, and only for an actual
+decrease.** `onUserInput()` checks `phase` against the engaged states
+(`throw` through `pullBoth`) and compares the new value against the last seen
+one — an increase, or any drag before the lasso lands, is ignored. Verified
+with a headless harness that stubs `performance.now()`/`requestAnimationFrame`
+onto a hand-advanced fake clock and shims `IntersectionObserver` to fire
+immediately: the no-interaction path runs the full give-up-and-leave sequence
+and cleans up (overlay removed, listener detached) with zero thrown errors;
+dispatching a genuine decreasing `input` event mid-`pullA` switches to
+celebrate and cleans up correctly; dispatching a non-decreasing one does not
+and the sequence runs its full course instead.
+
+Colours are `--commons-blob`, `--commons-blob-dark`, `--commons-blob-eye`,
+`--commons-rope`, `--commons-hat` and `--commons-hat-fold`, defined across
+all three palette blocks like every other decorative token on the site.
+
+## The "Building it into agents" truck (`js/agents-truck.js`)
+
+A blob drives a truck in with the Problem section's third heading —
+`#agentsHeading`, "Building it into agents" — hitched to the back, parks,
+gets out, unhooks it, and drives off. Plays once, first scroll into view,
+same pattern as every other decorative scene on the site.
+
+**The heading's position is re-measured every frame, and the animation's own
+transform is subtracted back out** (`naturalRect()`, using `appliedDx`).
+A first cut captured it *once* in `startSequence()`, on the reasoning that a
+heading in the document's own flow has no live input moving it the way the
+herd slider's thumb does. That reasoning was wrong, and the bug it caused is
+worth remembering: **`getBoundingClientRect()` is viewport-relative, and so
+is the `position: fixed` overlay** — so the moment the visitor *scrolled*,
+the cached rect described where the text used to be, and the truck stayed
+pinned to that spot while the words slid away underneath it. Scrolling moves
+an element in exactly the coordinate space this animation draws in, even
+though nothing about the document changed.
+
+The thing that made caching look necessary — that re-measuring an element
+you've already transformed reports its *transformed* position, not its
+natural one — is real, but it's solved by tracking the offset you applied
+and subtracting it, not by refusing to measure. `setHeadingDx()` is the only
+writer of `heading.style.transform`, and it records what it wrote, so
+`naturalRect()` can always recover the untransformed box. That single change
+makes the scene robust to scrolling, resizing and reflow at once.
+
+**Every moving part must be re-posed every frame, including the ones that
+aren't moving.** The same bug had a second half: `poseTruck()` was only
+called from the `enter` and `driveOff` phases, so through the whole middle of
+the sequence (settle, hop out, walk back, unhook, walk forward, hop in — ~5
+of the 8.8 seconds) the truck simply kept whatever transform `enter`'s last
+frame gave it. Even with live measurement it would still have sat there while
+the page scrolled, and worse, the *blob* — which is re-posed every frame —
+would have walked off and left it behind. `tick()` now applies the parked
+pose and redraws the tow line unconditionally at the top, and the two moving
+phases overwrite it. Verified by reflowing the heading mid-run at several
+phases and checking the truck's gap to the text stays exactly `GAP` and its
+vertical offset exactly 0.
+
+**Measure the text, not the element.** `#agentsHeading` is an `<h3>` — a
+block, so its own `getBoundingClientRect()` is the full width of the prose
+column (measured: 620 wide, right edge 660) while the words stop at 204.
+Keying the truck off that parked it ~470px past the end of the text, alone in
+the empty half of the line. `measureTextRect()` puts a `Range` over the
+heading's contents instead, which reports the glyphs' real box — also tighter
+vertically (20 tall against the block's 28.7, which includes the line box's
+leading), so the truck lands *on* the line of text rather than low beneath it.
+
+**Hiding happens inside the `IntersectionObserver` callback, not
+unconditionally at script load — and the observer's `rootMargin` is what
+keeps that from being a visible pop.** `hero-frame.js` and
+`commons-lasso.js` both get away with hiding their subject the instant the
+script runs, because their subjects (an image, a slider that already has
+sensible content) are never *only* meaningful text with nothing to fall back
+to. Hiding `#agentsHeading` unconditionally at load and relying on the
+observer to reveal it would mean: if the observer ever fails to fire for any
+reason, real content disappears permanently. So the hide is inside
+`startSequence()`, fired by the observer — but with `rootMargin: "0px 0px
+300px 0px"` and `threshold: 0`, which extends the trigger zone 300px past
+the real viewport bottom. The callback fires while the heading is still
+below the fold, so there's nothing on screen to pop invisible, and the
+worst-case failure mode if something goes wrong is "never gets the
+entrance," not "the text vanishes and never comes back."
+
+**The tow offset (truck hitch to text's right edge) is a single constant for
+the whole beat, which is what "attached" actually has to mean.** Both the
+truck's rest position and the heading's translateX are derived from the same
+`restTruckX()` (`naturalRect.right + GAP`), so during the drive-in the
+distance between the truck's hitch point and the text's current right edge
+never changes — they move as one rigid unit, arriving together. The tow line
+itself (`hitchLine`, a straight rod rather than the lasso's sagging rope,
+since a truck hitch is rigid) is drawn fresh every frame from the truck's
+hitch point to the text's live right edge, which costs nothing extra since
+both positions are already being computed for the pose anyway.
+
+**The overlay is viewport-sized and works entirely in `getBoundingClientRect()`
+/ `position: fixed` coordinates, with no intermediate "stage" rect the way
+`commons-lasso.js` has one.** That file's overlay is sized to a specific
+card's bounding box because everything in it (the slider, both blobs) stays
+within that card. Here the truck has to travel from off-screen left, past
+the heading, off-screen right — further than any single container — so the
+overlay simply covers the whole viewport (`inset: 0`, `viewBox` updated on
+resize) and every position is a plain client coordinate, matching what
+`getBoundingClientRect()` already returns with no translation step needed.
+
+**That viewBox must come from `documentElement.clientWidth/clientHeight`,
+not `window.innerWidth/innerHeight`.** `innerWidth` *includes* the
+scrollbar; the 100%-sized overlay the viewBox maps onto does not. Using it
+made the viewBox 15px wider than the box it painted into, and the default
+`preserveAspectRatio: xMidYMid meet` silently scaled the whole scene down
+~1.7% and offset it — enough to put the truck visibly off the text line even
+though every coordinate being computed was correct. Symptom to recognise: a
+`<g>`'s `getBoundingClientRect()` disagreeing with the `translate()` in its
+own transform attribute (measured 1265.9 against a transform of 1278).
+
+Colours are `--agents-truck`, `--agents-truck-dark`, `--agents-truck-window`,
+`--agents-blob`, `--agents-blob-dark`, `--agents-blob-eye` and
+`--agents-hitch` — a green truck, deliberately, for variety against the
+hero's red-orange crane and the pasture card's warm rope/hat tones; own
+tokens for the blob for the same reason `commons-lasso.js`'s do, even though
+the figure is the same family drawn the same way.
 
 ## Layout
 
@@ -435,8 +1306,8 @@ cost ~10px of panel slack, because this subtitle is the binding constraint on
 `PANEL_W`. It still fits, but there is now very little room — **re-measure this
 string before any wording change to the Leader panel's subtitle**, and treat
 adding a word to it as a `PANEL_W` change. The other floor is the side block's note,
-"Harvest rate is the slope of each line above." at 336px, which is why `SIDE`
-is 346 wide (644..990). **Measure the strings before choosing new widths** —
+"Harvest rate is the slope of each line above." at 336px, which `SIDE`'s 390
+of width still has to clear. **Measure the strings before choosing new widths** —
 a `getBBox()` sweep over every `text` in the drawing takes one harness run.
 Below ~1130px the canvas goes fluid (`width: 100%`) and the viewBox scales
 down; measured at 500 / 885 / 985 / 1135 / 1265 / 1425, no viewport
@@ -511,13 +1382,10 @@ bands were 1-4 units apart, ink to ink — measured, not guessed, by reading
 every `text` bbox in the first panel's column and diffing consecutive extents.
 Grid bottom to the stat value was **2**, value to its label **1**, the chart
 title to the top gridline label **1**, the x-axis number to "time step" **2**.
-Every gap is now 8-16 units (`GRID_Y: PANEL_TOP + 96`, `statsY: + 32` with the
-label at `+ 26`, chart/side titles at `top - 28`, axis labels at `bottom + 22`
-and `+ 50`, side rows on a 48 pitch), and `H` went 640 -> 720 to hold it.
-Horizontally, the three readouts under a pasture are on an explicit
-`STAT_PITCH: 86` centred on the panel, not spread across it at `PANEL_W / 3` —
-at the widest values a run reaches (5-digit `eaten`, ~56 units) they still
-clear each other by ~47. The
+Every gap is now 8-16 units (`GRID_Y: PANEL_TOP + 96`, chart/side titles at
+`top - 28`, axis labels at `bottom + 22` and `+ 50`, side rows on a 48 pitch),
+and `H` went 640 -> 720 to hold it (and back to 662 once the under-panel
+readouts moved into the side table — see above). The
 panel's accent rule also moved to `PANEL_TOP + 24`: at `+ 20` it sat 2 units
 under the title's descenders and read as an underline rather than a marker.
 Card padding went 18/16 -> 22/20 and `.dynamics-verdict`'s top margin 10 ->
@@ -536,9 +1404,11 @@ Card padding went 18/16 -> 22/20 and `.dynamics-verdict`'s top margin 10 ->
   width drives the rail wide and squeezes the drawing.
 - Chart palette: option colours are validated (see below). Teal and amber had to
   step down in dark mode — they were above the dark lightness band.
-- `--danger` (`#b91c1c` light, `#f87171` dark) is the semantic alarm colour, and
-  exists only for `.tagline-danger` — the one word in a tagline that carries the
-  outcome. It is deliberately **not** `--opt-4`, even though that pink was the
+- `--danger` (`#b91c1c` light, `#f87171` dark) is the semantic alarm colour. It
+  started as `.tagline-danger`'s alone — the one word in a tagline that carries
+  the outcome — and now also draws Project 03's norm marker (the red dashed
+  vertical and its caption). Both uses are "this is the moment that matters",
+  not "this is series N". It is deliberately **not** `--opt-4`, even though that pink was the
   only red-ish token already defined: `--opt-4` is a *series* colour (shepherd
   4's cloak, the fixed norm), and the rule that text never wears a series colour
   applies here too. 6.47:1 on the light card and 6.12:1 on the dark one, both

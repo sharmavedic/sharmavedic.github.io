@@ -42,8 +42,8 @@
         </div>
       </div>
       <div class="hero-photo">
-        <!-- Replace with <img src="assets/headshot.jpg" alt="Vedic Sharma" /> once you have a photo -->
-        VS
+        <img src="assets/headshot.jpg" width="600" height="600"
+             alt="Vedic Sharma" />
       </div>
     </section>
 
@@ -68,7 +68,7 @@
           built into artificial agents, purely through how we shape their incentives?
         </p>
 
-        <h3>Building it into agents</h3>
+        <h3 id="agentsHeading">Building it into agents</h3>
         <p>
           My work introduces an additional reward mechanism called <strong>social reward</strong>. This,
           alongside personal utility, lets a group of self-interested
@@ -2009,9 +2009,8 @@ z
 
     <section class="block reveal project3-layout" id="project-3">
       <div class="kicker">Project 03 · In progress</div>
-      <h2>The Dynamics Behind the Norm</h2>
+      <h2>Learning Welfare-Optimal Norms</h2>
       <div class="section-head">
-        <p class="tagline">Personal utility alone fails; a leader everyone else emulates does not</p>
         <p>
           Project 02 shows the idea works. This project runs the realistic version: agents keep
           running estimates of their rewards and reputations, behaviours are parameterized rather
@@ -2027,12 +2026,18 @@ z
           shepherd at its own personal-utility-maximizing herd size &mdash; the top pick of the
           first four shepherds from Project 01. Together that overgrazes the pasture; nobody
           destocks, and once a shepherd's herd has starved out it simply waits for the grass to
-          come back and turns its cows out again. <strong>Fixed</strong>
-          is Project 02's baseline: two cows, every shepherd, always. <strong>Leader</strong> starts
-          identically to Greedy, but one shepherd plays an adaptive rule from the start &mdash;
-          three cows once the pasture reads above 70% grass, two otherwise &mdash; and the other
-          three switch, one by one, to mirror whatever that shepherd is currently doing. The chart
-          tracks cumulative grass eaten across all three, the same metric Project 02 used.
+                    come back and turns its cows out again. <strong>Optimal</strong> is the welfare-optimal
+          norm itself &mdash; two cows, every shepherd, always, the most the pasture can carry
+          indefinitely. It is the target rather than a competitor, which is why its line is
+          dashed. <strong>Leader</strong> starts identically to Greedy, but one shepherd already
+          knows the optimal behaviour and plays it, and the other three switch, one by one, to
+          mirror it. By the time they do, the greedy opening has grazed the pasture down &mdash;
+          so the leader's first instruction is a repair, one cow until the grass returns, and
+          only then the norm. The chart tracks cumulative grass eaten across all three, the same
+          metric Project 02 used. Leader ends up running parallel to the dashed line but
+          permanently below it: the harvest given up while the pasture recovered is never won
+          back. That gap is what not knowing the norm costs &mdash; adapting to the grass is the
+          repair bill, not an edge, because at two cows there is nothing above the norm to find.
         </p>
       </div>
 
@@ -2046,13 +2051,13 @@ z
           </li>
           <li>
             <span class="policy-key-rule" style="background: var(--opt-2)"></span>
-            <b>Fixed</b>
-            <span class="policy-key-desc">Two cows, every shepherd</span>
-          </li>
-          <li>
-            <span class="policy-key-rule" style="background: var(--opt-3)"></span>
             <b>Leader</b>
             <span class="policy-key-desc">Follow the highest-reputation behaviour</span>
+          </li>
+          <li>
+            <span class="policy-key-rule policy-key-rule--dashed" style="--rule-color: var(--opt-3)"></span>
+            <b>Optimal</b>
+            <span class="policy-key-desc">Two cows, every shepherd</span>
           </li>
         </ul>
 
@@ -2075,9 +2080,9 @@ z
                 aria-label="How the simulations work">?</button>
 
         <div class="dynamics-canvas sim-canvas">
-          <svg class="dynamics-svg" viewBox="0 0 1000 720" role="img" aria-labelledby="dynamicsTitle dynamicsDesc">
+          <svg class="dynamics-svg" viewBox="0 0 1000 672" role="img" aria-labelledby="dynamicsTitle dynamicsDesc">
             <title id="dynamicsTitle">Three pastures, three herd-size policies</title>
-            <desc id="dynamicsDesc">Three six-by-six pastures run side by side from the same seed and starting grass. In the first, each of four shepherds runs its own personal-utility-maximizing herd size, which together overgrazes the pasture; once a shepherd's herd has starved out it turns its cows back onto the recovering grass, the smallest herd first. In the second, every shepherd is fixed at two cows. In the third, the shepherds start like the first, but one plays an adaptive rule based on the pasture's greenness while the other three switch, one by one, to mirror it. A chart below tracks cumulative grass eaten across all three.</desc>
+            <desc id="dynamicsDesc">Three six-by-six pastures run side by side from the same seed and starting grass. In the first, each of four shepherds runs its own personal-utility-maximizing herd size, which together overgrazes the pasture; once a shepherd's herd has starved out it turns its cows back onto the recovering grass, the smallest herd first. In the second, the shepherds start like the first, but one already knows the welfare-optimal herd size and plays it while the other three switch, one by one, to mirror it. In the third, every shepherd is fixed at that optimal two cows throughout. A chart below tracks cumulative grass eaten across all three, and a table beside it gives each pasture's harvest rate, grass remaining, head grazing and total eaten.</desc>
           </svg>
 
           <button class="sim-play-btn" id="dynamicsOverlayPlay" type="button"
@@ -2124,13 +2129,25 @@ z
 
         <h4>Leader</h4>
         <p>
-          Shepherd <b data-derived="leaderLabel"></b> plays an adaptive rule from the start:
-          <b data-derived="greenPct"></b> grass or more calls for <b data-cfg="greenCows"></b>
-          cows, anything less calls for <b data-cfg="brownCows"></b>. It re-checks the pasture
-          every <b data-cfg="reconsiderEvery"></b> steps. The other three shepherds start at
-          their own personal top pick, then switch to mirroring the leader's current choice at
-          steps <b data-derived="switchSteps"></b> respectively &mdash; one by one, not all at
-          once.
+          This pasture opens exactly like Greedy: all four shepherds on their own personal
+          top pick, well over what the grass can carry. One of them &mdash;
+          <b data-derived="leaderLabel"></b> &mdash; knows the welfare-optimal norm and drops to
+          <b data-cfg="brownCows"></b> cows at its first reconsideration, but on its own that
+          barely slows the collapse.
+        </p>
+        <p>
+          The other three ignore it while the pasture still looks fine. What makes them copy
+          is the failure itself: once the grass falls below <b data-derived="recoverPct"></b>
+          the leader calls for <b data-cfg="leanCows"></b> cow, and the three join it one at a
+          time, <b data-cfg="joinEvery"></b> steps apart. It holds there until the grass is
+          back to <b data-derived="recoverUntilPct"></b> and at least
+          <b data-cfg="minRepairSteps"></b> steps have passed, then returns to
+          <b data-cfg="brownCows"></b> &mdash; the moment the red line marks. It
+          watches the pasture every <b data-cfg="watchEvery"></b> steps and acts on what it
+          sees every <b data-cfg="reconsiderEvery"></b>. That repair is why this pasture ends up
+          <em>behind</em> Optimal and stays there &mdash; the harvest given up while the grass
+          came back is never won again. Adapting to the pasture is what the damage costs, not
+          a way to beat the norm.
         </p>
 
         <h4>What is being counted</h4>
@@ -2160,10 +2177,13 @@ z
 </footer>
 
 <script src="js/main.js"></script>
+<script src="js/hero-frame.js"></script>
 <script src="js/shepherd-sprite.js"></script>
 <script src="js/cow-sprite.js"></script>
 <script src="js/commons.js"></script>
 <script src="js/commons-sim.js"></script>
+<script src="js/commons-lasso.js"></script>
+<script src="js/agents-truck.js"></script>
 <script src="js/shepherds.js"></script>
 <script src="js/shepherds-sim.js"></script>
 <script src="js/leader-emergence.js"></script>

@@ -33,7 +33,20 @@
     moveValue: 0.75,
     temperature: 0.08,
     moveBias: 2.5,
-    regrowPerNeighbour: 0.015,
+    // Grass the pasture opens on, as a fraction of full. Not 1.0: a pasture
+    // that starts perfect reads as pristine rather than as a going concern
+    // that has already been grazed for a while, and it gives every policy a
+    // free buffer before anything it does starts to matter.
+    //
+    // 0.7 (mean tile at level 3.5 of 5). Was 0.8. Note this is *not* free
+    // drama: the level a grazed-out pasture can still climb back from is a
+    // property of the model (~40% with four head on it), so opening lower
+    // does not deepen the collapse — it only shortens the fall into it, and
+    // it costs the buffer that keeps the overshoot safe. Project 03's
+    // `recoverBelow` had to go 0.52 -> 0.55 to stay clear of the floor.
+    // js/commons-sim.js deliberately still opens at 0.8 — see CLAUDE.md.
+    startGrass: 0.7,
+    regrowPerNeighbour: 0.012,
     regrowBase: 0,           // seed-bank: chance a tile gains a level with no
                              // green neighbour at all. At 0 a flattened pasture
                              // is dead for good, which is simulation 1's whole
@@ -68,7 +81,23 @@
     const randInt = (n) => Math.floor(random() * n);
 
     const levels = [];
-    for (let r = 0; r < N; r++) levels.push(new Array(N).fill(MAX_LEVEL));
+    // Opening grass. The mean tile is `startGrass` of full, with a level of
+    // variation either side so the pasture does not open as a flat block of one
+    // colour — the jitter is symmetric, so it costs the mean nothing. Drawn
+    // from the seeded RNG, so a given seed still reproduces exactly.
+    function startingLevel() {
+      const mean = cfg.startGrass * MAX_LEVEL;
+      const base = Math.floor(mean);
+      const level = base + (random() < mean - base ? 1 : 0);
+      const roll = random();
+      const jitter = roll < 0.25 ? -1 : roll < 0.5 ? 1 : 0;
+      return Math.max(0, Math.min(MAX_LEVEL, level + jitter));
+    }
+    for (let r = 0; r < N; r++) {
+      const row = [];
+      for (let c = 0; c < N; c++) row.push(startingLevel());
+      levels.push(row);
+    }
 
     let herd = [];
     let nextId = 0;
@@ -105,8 +134,12 @@
     }
 
     function seed(perShepherd) {
+      // Same opening grass as a fresh `create()` — this used to carry its own
+      // hardcoded fill (30% of tiles one level down, ~94%), which silently won
+      // over `startGrass` for every caller that re-seeds. Project 03 seeds all
+      // three of its pastures, so the config looked applied and wasn't.
       for (let r = 0; r < N; r++) {
-        for (let c = 0; c < N; c++) levels[r][c] = random() < 0.3 ? MAX_LEVEL - 1 : MAX_LEVEL;
+        for (let c = 0; c < N; c++) levels[r][c] = startingLevel();
       }
       herd = [];
       nextId = 0;
