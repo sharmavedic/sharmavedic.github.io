@@ -383,25 +383,31 @@ nav.nav {
 
 /* ===== Hero ===== */
 .hero {
-  padding: 84px 0 56px;
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 48px;
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100svh - 73px);
+  padding: 48px 0;
+  display: flex;
   align-items: center;
-  /* The hero photo's animation overlay is deliberately wider than the photo
-     (see .hero-frame-svg) so confetti has somewhere to land outside the frame.
-     Between the 720px breakpoint and about 1100px the photo sits near the
-     content's right edge and that overhang would push the page into a
-     horizontal scroll. `clip` rather than `hidden`: hidden on one axis forces
-     the other to `auto`, which would make this a scroll container; clip does
-     not, and leaves overflow-y visible. The confetti is simply cut off at the
-     content edge at those widths, which is the right degradation. */
-  overflow-x: clip;
+  overflow: clip;
 }
 
+.hero-inner {
+  width: 100%;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 0 clamp(24px, 6vw, 96px);
+  display: grid;
+  grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
+  gap: 32px;
+  align-items: center;
+}
+.hero-copy { position: relative; z-index: 1; }
+.research-content { background: var(--bg-alt); border-top: 1px solid var(--border); padding-top: 24px; }
+#problem { scroll-margin-top: 90px; }
+
 @media (max-width: 720px) {
-  .hero { grid-template-columns: 1fr; padding: 48px 0 32px; text-align: center; }
-  .hero-photo { order: -1; margin: 0 auto; }
+  .hero { padding: 40px 0 24px; text-align: center; }
 }
 
 .eyebrow {
@@ -414,7 +420,7 @@ nav.nav {
 
 .hero h1 {
   font-family: var(--font-serif);
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-size: clamp(2.2rem, 4.1vw, 4.2rem);
   line-height: 1.1;
   letter-spacing: -0.02em;
   margin-bottom: 18px;
@@ -424,6 +430,7 @@ nav.nav {
 .hero h1 em {
   font-style: normal;
   color: var(--primary);
+  white-space: nowrap;
 }
 
 .hero p.lead {
@@ -470,6 +477,105 @@ nav.nav {
   border-color: var(--border);
 }
 .btn-ghost:hover { box-shadow: var(--shadow); border-color: var(--primary); }
+
+/* The factory occupies the entire opening. Its left-hand activity is muted
+   behind the introduction, while the main production line stays clear. */
+.kinetic-sculpture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.kinetic-sculpture canvas, .sculpture-fallback {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.kinetic-sculpture canvas { opacity: 0; }
+.kinetic-sculpture canvas, .sculpture-fallback {
+  -webkit-mask-image: linear-gradient(to right, #0002 0%, #0002 34%, #0005 45%, #000 58%);
+  mask-image: linear-gradient(to right, #0002 0%, #0002 34%, #0005 45%, #000 58%);
+}
+.kinetic-sculpture.is-rendered canvas { opacity: 1; }
+.kinetic-sculpture.is-rendered .sculpture-fallback { visibility: hidden; }
+.sculpture-toggle {
+  position: absolute;
+  right: 32px;
+  bottom: 24px;
+  pointer-events: auto;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background .2s;
+}
+.sculpture-toggle[hidden] { display: none; }
+.sculpture-toggle:hover { background: var(--bg-raised); }
+.sculpture-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+.sculpture-play, .sculpture-toggle[data-paused="true"] .sculpture-pause { display: none; }
+.sculpture-toggle[data-paused="true"] .sculpture-play { display: block; }
+.sculpture-inspector {
+  position: absolute;
+  right: 80px;
+  bottom: 24px;
+  left: 16px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  font-size: 12px;
+}
+.sculpture-inspector-tools { display: flex; align-items: center; gap: 6px; }
+.sculpture-inspector[hidden], .sculpture-inspector-tools[hidden] { display: none; }
+.sculpture-inspector button {
+  pointer-events: auto;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.sculpture-inspector button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.sculpture-inspector-hint { color: var(--text-muted); margin-right: 6px; }
+.kinetic-sculpture.is-inspecting { z-index: 2; background: var(--bg); }
+.kinetic-sculpture.is-inspecting canvas {
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.kinetic-sculpture.is-dragging canvas { cursor: grabbing; }
+@media (max-width: 720px) {
+  .sculpture-inspector-hint { display: none; }
+  .sculpture-inspector, .sculpture-inspector-tools { gap: 4px; }
+  .sculpture-inspector button { padding-inline: 7px; }
+}
+
+@media (max-width: 1040px) {
+  .hero-inner { padding-inline: 32px; gap: 16px; }
+}
+@media (max-width: 720px) {
+  .hero { padding-bottom: 460px; }
+  .hero-inner { grid-template-columns: minmax(0, 1fr); gap: 0; padding-inline: 24px; }
+  .kinetic-sculpture { inset: auto 0 0; height: 460px; }
+  .kinetic-sculpture canvas, .sculpture-fallback { -webkit-mask-image: none; mask-image: none; }
+  .research-content { padding-top: 0; }
+}
 
 /* No frame: the photo dissolves into the page instead of sitting in a box.
    The card, border, radius and shadow that used to hold the "VS" placeholder
@@ -544,6 +650,43 @@ nav.nav {
    whole thing exists to avoid. */
 
 .hero-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* The portrait and its one-shot frame-building animation now introduce the
+   contact page. A 480px visual field surrounds the 300px image, so this row
+   reserves that full height and keeps the builders clear of the cards below. */
+.contact-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 64px;
+  align-items: center;
+  min-height: 480px;
+}
+
+.contact-intro .section-head { margin-bottom: 0; }
+.contact-intro .hero-photo { margin: 0 auto; }
+
+@media (max-width: 900px) {
+  .contact-intro {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding-bottom: 72px;
+  }
+
+  .contact-intro .section-head { margin-bottom: 16px; }
+}
+
+@media (max-width: 520px) {
+  .contact-intro .hero-photo {
+    width: 250px;
+    height: 250px;
+  }
+
+  .contact-intro .hero-frame-svg {
+    inset: -75px;
+    width: 400px;
+    height: 400px;
+  }
+}
 
 /* ===== Sections ===== */
 main { padding-bottom: 80px; }

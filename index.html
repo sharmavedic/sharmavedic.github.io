@@ -25,9 +25,9 @@
 </header>
 
 <main>
-  <div class="wrap">
-    <section class="hero">
-      <div>
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-copy">
         <div class="eyebrow">PhD Candidate · University of Toronto</div>
         <h1>Vedic Sharma builds theory for <em>multi-agent</em> systems that learn to cooperate.</h1>
         <p class="lead">
@@ -41,14 +41,69 @@
           <a class="btn btn-ghost" href="contact.html">Get in Touch</a>
         </div>
       </div>
-      <div class="hero-photo">
-        <img src="assets/headshot.jpg" width="600" height="600"
-             alt="Vedic Sharma" />
-      </div>
-    </section>
+      <figure class="kinetic-sculpture">
+        <svg class="sculpture-fallback" viewBox="0 0 1200 700" aria-hidden="true">
+          <g fill="none" stroke="#d9dedb" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M0 560h350V190h300v130h250"/>
+            <path d="M40 360h420V120h230v120h280"/>
+          </g>
+          <ellipse cx="867" cy="566" rx="276" ry="31" fill="#242532" opacity=".1"/>
+          <rect x="833" y="265" width="180" height="225" rx="12" fill="#f3f4ef"/>
+          <rect x="856" y="330" width="135" height="110" rx="5" fill="#314956"/>
+          <circle cx="923" cy="385" r="40" fill="none" stroke="#f5f4e9" stroke-width="10"/>
+          <circle cx="923" cy="385" r="26" fill="#4189b7"/>
+          <path d="M907 263v-52h36v52" fill="#e8ebe5"/>
+          <ellipse cx="925" cy="211" rx="34" ry="12" fill="#edb56a"/>
+          <rect x="610" y="297" width="84" height="184" rx="36" fill="#e9ede8"/>
+          <g stroke="#f0f2ed" stroke-width="17" fill="none">
+            <path d="M715 503V330h99v173M680 567v-54m310 54v-54"/>
+            <path d="M545 505h550"/>
+          </g>
+          <path d="M565 488h510" stroke="#5c7078" stroke-width="22"/>
+          <g fill="#4189b7">
+            <rect x="602" y="464" width="24" height="25"/><rect x="727" y="464" width="24" height="25"/><rect x="960" y="464" width="24" height="25"/>
+          </g>
+          <rect x="840" y="464" width="24" height="25" fill="#edb56a"/>
+          <defs>
+            <g id="factory-astronaut">
+              <g fill="#f4f4ed" stroke="#b5c5ce" stroke-width="1.5">
+                <rect x="-10" y="-8" width="20" height="26" rx="8"/>
+                <path d="M-9 0l-8 10m26-10 8 10" stroke="#e3e9eb" stroke-width="8" stroke-linecap="round"/>
+                <rect x="-11" y="13" width="9" height="10" rx="4"/><rect x="2" y="13" width="9" height="10" rx="4"/>
+                <circle cy="-15" r="17"/>
+              </g>
+              <ellipse cy="-14" rx="13" ry="12" fill="#a5ccd9"/>
+              <ellipse cy="-11" rx="10" ry="8" fill="#f4b18c"/>
+              <path d="M-8-22q5-4 11-2" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              <g fill="#314956"><circle cx="-4" cy="-11" r="1.4"/><circle cx="4" cy="-11" r="1.4"/></g>
+              <rect x="-5" y="3" width="10" height="7" rx="1" fill="#b5c5ce"/>
+              <circle cx="-2" cy="6" r="1.3" fill="#4189b7"/>
+            </g>
+          </defs>
+          <use href="#factory-astronaut" x="615" y="552"/><use href="#factory-astronaut" x="982" y="577"/><use href="#factory-astronaut" x="1028" y="573"/>
+        </svg>
+        <canvas role="img" aria-label="A sprawling white miniature factory. Conveyors carry blue parcels, a press stamps, pellets bob in a hopper, and little astronauts in white suits deliver parts, climb a ladder, inspect machinery, and pull a trolley in opposite directions."></canvas>
+        <button class="sculpture-toggle" type="button" aria-label="Pause factory animation" aria-pressed="false" hidden>
+          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+            <path class="sculpture-pause" d="M7 5v10M13 5v10" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path class="sculpture-play" d="m7 4 9 6-9 6Z" fill="currentColor"/>
+          </svg>
+        </button>
+        <div class="sculpture-inspector" hidden>
+          <span class="sculpture-inspector-tools" hidden>
+            <span class="sculpture-inspector-hint">Scroll to zoom · Drag to pan</span>
+            <button type="button" data-inspect="out" aria-label="Zoom out">−</button>
+            <button type="button" data-inspect="in" aria-label="Zoom in">+</button>
+            <button type="button" data-inspect="reset">Reset</button>
+          </span>
+          <button type="button" data-inspect="toggle" aria-pressed="false">Inspect models</button>
+        </div>
+      </figure>
+    </div>
+  </section>
 
-    <hr class="section-divider" />
-
+  <div class="research-content">
+  <div class="wrap">
     <section class="block reveal problem-layout" id="problem">
       <div class="kicker">The Problem</div>
       <h2>A tragedy of the commons</h2>
@@ -2026,7 +2081,8 @@ z
           shepherd at its own personal-utility-maximizing herd size &mdash; the top pick of the
           first four shepherds from Project 01. Together that overgrazes the pasture; nobody
           destocks, and once a shepherd's herd has starved out it simply waits for the grass to
-                    come back and turns its cows out again. <strong>Optimal</strong> is the welfare-optimal
+          come back &mdash; which, on a pasture grazed this hard, mostly never arrives.
+          <strong>Optimal</strong> is the welfare-optimal
           norm itself &mdash; two cows, every shepherd, always, the most the pasture can carry
           indefinitely. It is the target rather than a competitor, which is why its line is
           dashed. <strong>Leader</strong> starts identically to Greedy, but one shepherd already
@@ -2082,7 +2138,7 @@ z
         <div class="dynamics-canvas sim-canvas">
           <svg class="dynamics-svg" viewBox="0 0 1000 672" role="img" aria-labelledby="dynamicsTitle dynamicsDesc">
             <title id="dynamicsTitle">Three pastures, three herd-size policies</title>
-            <desc id="dynamicsDesc">Three six-by-six pastures run side by side from the same seed and starting grass. In the first, each of four shepherds runs its own personal-utility-maximizing herd size, which together overgrazes the pasture; once a shepherd's herd has starved out it turns its cows back onto the recovering grass, the smallest herd first. In the second, the shepherds start like the first, but one already knows the welfare-optimal herd size and plays it while the other three switch, one by one, to mirror it. In the third, every shepherd is fixed at that optimal two cows throughout. A chart below tracks cumulative grass eaten across all three, and a table beside it gives each pasture's harvest rate, grass remaining, head grazing and total eaten.</desc>
+            <desc id="dynamicsDesc">Three six-by-six pastures run side by side from the same seed and starting grass. In the first, each of four shepherds runs its own personal-utility-maximizing herd size, which together overgrazes the pasture until every cow has starved; a shepherd will restock if the grass recovers far enough, smallest herd first, but it rarely does within a run. In the second, the shepherds start like the first, but one already knows the welfare-optimal herd size and plays it while the other three switch, one by one, to mirror it. In the third, every shepherd is fixed at that optimal two cows throughout. A chart below tracks cumulative grass eaten across all three, and a table beside it gives each pasture's harvest rate, grass remaining, head grazing and total eaten.</desc>
           </svg>
 
           <button class="sim-play-btn" id="dynamicsOverlayPlay" type="button"
@@ -2100,9 +2156,12 @@ z
         <h3 id="dynamicsHelpTitle">How the three simulations work</h3>
 
         <p>
-          All three pastures use exactly the grazing model from <em>The Problem</em> above,
-          started from the same grass and the same random seed, so nothing but the herd-size
-          policy differs between them.
+          All three pastures use the same grazing rules as <em>The Problem</em> above &mdash; cows
+          eat, move toward greener tiles and starve when their energy runs out, and grass spreads
+          only from grass. The regrowth is tuned a little differently here, so that two cows a
+          shepherd is not merely survivable but the largest herd the pasture can carry
+          indefinitely. All three start from the same grass and the same seed, so nothing but the
+          herd-size policy differs between them.
         </p>
 
         <h4>Greedy</h4>
@@ -2114,11 +2173,12 @@ z
           the pasture can carry, so the grass goes and the cows starve.
         </p>
         <p>
-          Nobody ever destocks by choice. But once a shepherd has lost its whole herd and the
-          empty pasture starts growing back, it turns its cows out again &mdash; the smallest
-          herd first, the largest last, each waiting for the pasture to look good enough to
-          it: <b data-derived="restockList"></b> grass. Each of them is still doing the
-          individually sensible thing, and the pasture just cycles.
+          Nobody ever destocks by choice. A shepherd that has lost its whole herd will turn
+          its cows out again, but only once the empty pasture looks good enough to it &mdash;
+          the smallest herd first, the largest last: <b data-derived="restockList"></b> grass.
+          Grass only spreads from grass, though, and a pasture grazed this far down has little
+          left to spread from, so within a run most of them are still waiting. Each is doing
+          the individually sensible thing throughout, which is the whole problem.
         </p>
 
         <h4>Fixed</h4>
@@ -2138,11 +2198,14 @@ z
         <p>
           The other three ignore it while the pasture still looks fine. What makes them copy
           is the failure itself: once the grass falls below <b data-derived="recoverPct"></b>
-          the leader calls for <b data-cfg="leanCows"></b> cow, and the three join it one at a
-          time, <b data-cfg="joinEvery"></b> steps apart. It holds there until the grass is
-          back to <b data-derived="recoverUntilPct"></b> and at least
-          <b data-cfg="minRepairSteps"></b> steps have passed, then returns to
-          <b data-cfg="brownCows"></b> &mdash; the moment the red line marks. It
+          they join it one at a time, <b data-cfg="joinEvery"></b> steps apart, and the leader
+          then walks the whole pasture down a step at a time &mdash;
+          <b data-cfg="repairLadder"></b> head, a rung every <b data-cfg="rungSteps"></b> steps
+          &mdash; rather than destocking all at once. It holds at the bottom until the grass is
+          back to <b data-derived="recoverUntilPct"></b>, and then returns to
+          <b data-cfg="brownCows"></b> cows each, the moment the red line marks. So the norm
+          comes back when the commons has been restored to what the norm can sustain, rather
+          than after any fixed number of steps. It
           watches the pasture every <b data-cfg="watchEvery"></b> steps and acts on what it
           sees every <b data-cfg="reconsiderEvery"></b>. That repair is why this pasture ends up
           <em>behind</em> Optimal and stays there &mdash; the harvest given up while the grass
@@ -2160,15 +2223,17 @@ z
         <h4>The controls</h4>
         <p>
           Play and pause sit over the middle pasture, fast forward in the top-right corner and
-          restart in the bottom-right; both appear on hover. Restarting deals a fresh seed and
-          leaves the run paused. A run lasts <b data-cfg="horizon"></b> steps and then stops on
+          restart in the bottom-right; both appear on hover. Restarting replays the same run from
+          the start and leaves it paused &mdash; all three pastures share one fixed seed, so what
+          you see here is one particular run rather than a fresh sample each time. A run lasts <b data-cfg="horizon"></b> steps and then stops on
           its result; while it goes, the line under the card reports who is ahead and by how
-          much. The chart shows the last <b data-cfg="chartSpan"></b> steps: up to that point
-          it fills from zero, and after it the window scrolls, so the left edge is always the
-          current step minus <b data-cfg="chartSpan"></b>.
+          much. The chart's x-axis spans <b data-cfg="chartSpan"></b> steps &mdash; the whole
+          run &mdash; so the three lines simply grow across it from zero, and the red marker
+          stays put once it lands.
         </p>
       </dialog>
     </section>
+  </div>
   </div>
 </main>
 
@@ -2177,13 +2242,15 @@ z
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/hero-frame.js"></script>
+<script src="js/kinetic-sculpture.js"></script>
 <script src="js/shepherd-sprite.js"></script>
 <script src="js/cow-sprite.js"></script>
 <script src="js/commons.js"></script>
 <script src="js/commons-sim.js"></script>
+<!-- Temporarily disabled: decorative animations in the Problem section.
 <script src="js/commons-lasso.js"></script>
 <script src="js/agents-truck.js"></script>
+-->
 <script src="js/shepherds.js"></script>
 <script src="js/shepherds-sim.js"></script>
 <script src="js/leader-emergence.js"></script>

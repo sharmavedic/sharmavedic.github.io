@@ -337,12 +337,18 @@
     x: SIDE.left, y: SIDE.top - TITLE_DY, "font-size": "15.2",
     "font-weight": "600", fill: "var(--text-muted)"
   });
-  sideTitle.textContent = `Last ${START_SPAN} steps`;
+  // "Across", not "Last": the window no longer scrolls (the sim's chartSpan
+  // equals its horizon), so this block covers the whole run rather than a
+  // trailing slice of a longer one.
+  sideTitle.textContent = `Across ${START_SPAN} steps`;
   sideGroup.appendChild(sideTitle);
 
   // Right-anchored column edges, laid out from the right. `eaten` gets the
-  // widest slot because it is the only five-digit value on the card
-  // ("16,019"); `rate` gets the second widest because its header is the long
+  // widest slot: it was the only five-digit value on the card back when a run
+  // was 10,000 steps ("16,019"), and at the 500-step horizon it peaks around
+  // 800 instead — the slots are simply roomier than they now need to be, which
+  // is the safe direction, and they are what any longer horizon would want
+  // back. `rate` gets the second widest because its header is the long
   // one. Widen any of these and check the name column still clears the
   // leftmost value — "Optimal" ends ~664.
   const COLS = { rate: 786, grass: 852, head: 910, eaten: 990 };
@@ -532,7 +538,7 @@
     svg, N, LEVELS, TILE, W, H, panels, HERD_COLORS,
     setHorizon(n) {
       xSpan = n;
-      sideTitle.textContent = `Last ${n} steps`;
+      sideTitle.textContent = `Across ${n} steps`;
     },
     // One call per step, from the sim's sync(). `rate` is not here — it is
     // derived from the plotted line in drawChart(), so it can never disagree

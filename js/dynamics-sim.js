@@ -31,11 +31,103 @@
 
   const CONFIG = {
     stepMs: 220,               // wall-clock length of one time step
-    horizon: 10000,            // steps in a full run, then it stops on the standing
-    chartSpan: 500,            // steps visible in the chart at once. The run is far
-                               // longer than the window, so past this the chart
-                               // scrolls: the x-axis reads (step - chartSpan) .. step
-    regrowBase: 0.004,         // seed-bank regrowth, matching Project 02's pastures
+    horizon: 500,              // steps in a full run, then it stops on the standing
+    chartSpan: 500,            // steps visible in the chart at once. Equal to the
+                               // horizon, so a run now fits the window exactly and
+                               // the chart never actually scrolls — the axis stays
+                               // 0..500 and the lines grow into it. The scrolling
+                               // machinery in js/dynamics.js (the (step - chartSpan)
+                               // left edge, prune(), the kept pre-edge sample) is
+                               // left in place and is simply never exercised; it
+                               // costs nothing and is what any horizon > 500 would
+                               // need again.
+    regrowBase: 0.001,         // seed-bank regrowth. Project 02's pastures run 0.004;
+                               // this was walked down from there in two passes, by
+                               // request, so it is deliberately *not* the same number
+                               // as Project 02's and should not be re-synced to it.
+                               //
+                               // 0.002 is the floor that costs Optimal nothing. See
+                               // the sweep in CLAUDE.md: over 200 seeds at the
+                               // 500-step horizon, Optimal wipes out in 4/200 at
+                               // 0.004, 7/200 at 0.003 and 6/200 here — flat, all
+                               // noise around ~3% — and then 14/200 at 0.001 and
+                               // 29/200 at 0. The cliff is between 0.002 and 0.001,
+                               // and past it the card genuinely breaks: a pasture
+                               // labelled "Optimal" sits dead while Leader wins it.
+                               // **Do not go below 0.002 without re-running that
+                               // sweep.** (Leader is not the constraint — it stayed
+                               // below Optimal in every run where Optimal survived,
+                               // at every rate down to 0.)
+                               //
+                               // What this rate actually buys is the *greedy*
+                               // pasture's ending, and 0.002 is where that changes
+                               // in kind rather than degree: at 0.003 Greedy starves
+                               // out, regreens to 63% and restocks to 5 head; here it
+                               // starves out and stays dead at 34% grass with 0 head.
+                               // The boom-bust cycle the old note described — "the
+                               // commons only recovers after the herd that ruined it
+                               // is gone" — is gone with it, chosen deliberately for
+                               // the bleaker read. `restockAt` and restockGreedy()
+                               // still work and still fire in the runs that do
+                               // regreen; they are simply rarely reached now.
+    // Project 03 passes startGrass, regrowPerNeighbour and highGrass into every
+    // PastureModel.create() rather than inheriting the model's DEFAULTS, so this
+    // card can be tuned without touching Simulation 1's balance table or the
+    // archived Project 02 visual. Do not "simplify" them back out.
+    //
+    // **0.60 opens the pastures below the ~73% this card's Optimal herd
+    // sustains**, so the Optimal pasture *climbs* over the first ~80 steps and
+    // then holds. It briefly ran at 0.73 — exactly the equilibrium, so the
+    // Optimal line was flat from step 0 — and was moved down by request. Worth
+    // knowing what that trades: a flat line says "two cows is the level this
+    // pasture holds" at a glance, whereas a climbing one can read as "two cows
+    // is under-stocking". It is not actually under-stocking (9 head dies 24/24
+    // at this tuning — see regrowPerNeighbour), but the picture no longer says
+    // so on its own.
+    //
+    // What it buys is a thinner, more worn-looking opening and a slightly
+    // better ordering: measured 64 seeds, Leader finishes a median -6.1% and is
+    // below Optimal in 62/64, against -3.0% and 59/64 at the 0.73 opening,
+    // because there is less standing grass for the greedy herd to bank. It also
+    // costs Optimal a little safety — 2/64 wipeouts here against 0/64 at 0.73,
+    // since the pasture has to climb to its steady state while already carrying
+    // a full herd. The shipped seed is one where it survives comfortably.
+    //
+    // Opening, equilibrium and `recoverUntil` are three different numbers now
+    // and only the last two are tied together. If `regrowPerNeighbour` or
+    // `highGrass` moves, re-measure the equilibrium and reset `recoverUntil`;
+    // this opening is a free choice.
+    startGrass: 0.60,
+    // **These two deliberately differ from Simulation 1 (0.012 / highGrass 3),
+    // and that is the most consequential decision in this file.**
+    //
+    // `highGrass` is the level at which a tile counts as a green neighbour, i.e.
+    // as a seed for regrowth. At 3, the model is *bistable*: thinning a pasture
+    // destroys its own seed stock, so there is a stable state near 82% grass and
+    // a collapse basin with nothing in between. Eight head then sits at 82% —
+    // visibly un-grazed — while a ninth cow tips the whole pasture to zero
+    // (measured 2,000 steps, 16 seeds: 8 head survives 15/16, 9 head 0/16).
+    // Both readings are true at once, and the un-grazed one makes the card look
+    // like two cows is under-stocking.
+    //
+    // Dropping it to 2 lets thin grass still seed its neighbours, which replaces
+    // the cliff with a graded response — the steady grass level now falls as the
+    // herd grows (at 0.012: 8 head 83%, 9 → 80%, 10 → 76%, 11 → 71%) instead of
+    // jumping to collapse. That also moved capacity to 10 head, so the rate came
+    // down to put the optimum back at 8. Measured, 24 seeds, 2,000 steps:
+    //   0.0090 -> 8 head 22/24 @ 72%,  9 head 0/24
+    //   0.0092 -> 8 head 24/24 @ 73%,  9 head 0/24   <- shipped
+    //   0.0095 -> 8 head 24/24 @ 75%,  9 head 3/24
+    //   0.0098 -> 8 head 24/24 @ 77%,  9 head 13/24
+    // 0.0092 is where two cows a shepherd is unambiguously the largest herd the
+    // pasture carries *and* the grass visibly shows the grazing.
+    //
+    // Simulation 1 was deliberately NOT changed to match: its balance table, the
+    // 2-cow capacity behind Project 01's utility tables, and the "collapse is
+    // absorbing" finding all rest on 0.012 / highGrass 3 / regrowBase 0. If the
+    // two are ever unified, do it from Simulation 1's side and re-run its table.
+    regrowPerNeighbour: 0.0092,
+    highGrass: 2,
     personalTop: [4, 4, 3, 2], // shepherds 0-3's own top pick, from Project 01
     leader: 0,                 // which shepherd plays the adaptive rule throughout
     // Followers do not join on a clock. They start copying the leader once the
@@ -88,29 +180,82 @@
     // 0/16. So the repair has to catch the pasture *before* the followers
     // settle on two cows, and still leave enough for four head to work with.
     //
-    // This number moves with `startGrass`, because a lower opening is less
-    // buffer between the trigger and the floor: at the old 0.8 opening 0.52
-    // was safe (0/40 wipeouts) and that same 0.52 fails 1/32 at 0.7. Swept
-    // over 32 seeds at the 0.7 opening, 0.55 bottoms out at a median 50%
-    // (worst 41%) with 0/32 pastures hitting zero and no cows starved; 0.52
-    // is 1/32, 0.48 is 3/32 and 0.45 is 16/32. **Re-sweep this if
-    // `startGrass` changes again.**
-    recoverBelow: 0.55,
-    // The repair ends on the *pasture*, not on a clock: the leader returns to
-    // the norm once the grass is back to `recoverUntil` — but never before
-    // `minRepairSteps` have passed.
+    // **This is the depletion knob, and it is bounded below by cow starvation,
+    // not by the field.** Lowering it lets the followers stay greedy longer, so
+    // the pasture is run further down and takes visibly longer to climb back —
+    // which is what it is set for.
     //
-    // The floor is there because the gap between Leader and Optimal simply is
-    // the length of the repair, at about 1% of final harvest per 200 steps.
-    // On the grass rule alone the repair lasts ~100 steps and the gap
-    // collapses to -0.09%, at which point Leader actually *beats* Optimal in
-    // 9 of 24 seeds and the section's whole claim breaks. Measured at the
-    // 0.7 opening: hold 400 gives -1.8% with Leader below Optimal in 32/32.
-    // Note the grass threshold is not the real knob — 0.70 and 0.80 measure
-    // identically, because four head crosses both within ~100 steps.
-    recoverUntil: 0.80,
-    minRepairSteps: 400,
-    leanCows: 1, brownCows: 2,
+    // The floor was measured directly: graze down to a target with 13 head,
+    // destock, then give the pasture 2,000 steps (16 seeds per cell). At one cow
+    // each the *field* climbs back to 70% from every level tested, down to 20% —
+    // grass spreads from grass and four head barely touch it. What fails first
+    // is the herd: cows start starving at 30% (3/16 runs) and it is 11/16 by
+    // 25%. **So the real constraint is "destock before the pasture reaches
+    // ~35%", and everything above that is safe.**
+    //
+    // 0.50 leaves the margin. Measured over 64 seeds at the shipped settings:
+    // trough median 46%, worst 41%, **0/64 below 40%**, 0/64 below 35%, the
+    // leader's herd never drops below its 4 destocked head, and 0/64 wipeouts.
+    // Note the trough always undershoots this threshold, because the followers
+    // join one at a time (`joinEvery`) after it trips — that gap is why the
+    // margin has to be real and not nominal.
+    //
+    // For scale, 24 seeds each: 0.64 troughs at 59% and is back over 70% by
+    // step 36; 0.58 -> 55% / step 54; **0.50 -> 46% / step 119**; 0.46 -> 42%
+    // but worst-case 33%, already inside the starvation band; 0.42 -> 37% /
+    // worst 29%, which is where herds begin dying. **Do not go below 0.50
+    // without re-running the floor measurement above.**
+    recoverBelow: 0.50,
+    // The repair ends on the *pasture*, not on a clock: the leader returns to
+    // the norm once the grass is back to `recoverUntil` — 0.80, just under the
+    // measured ~82% equilibrium for 8 head. So the red marker lands on a
+    // **state**: the leader hands the norm back once it has restored the
+    // commons to roughly what the norm can sustain.
+    //
+    // This tracks the *equilibrium*, not the opening. It was briefly tied to
+    // `startGrass` instead, which only made sense while the pastures opened at
+    // 82% — see startGrass for why they no longer do.
+    recoverUntil: 0.60,
+    // **The repair ladder: whole-pasture herd sizes, walked down one rung every
+    // `rungSteps`.** Replaces the old single destock (everyone straight to one
+    // cow), which read as a cliff. Asked for as "make the recovery slowly by
+    // changing it to 7 heads or 6 heads eventually bringing it to 4 heads".
+    //
+    // It bottoms at 4 and holds there until the grass is back to
+    // `recoverUntil`, then the norm. Note the ladder does NOT start at 8: the
+    // fall from the opening down to ~40% is done by the greedy herd, because
+    // 8 head cannot deplete this pasture at all (it is the carrying capacity —
+    // from 60% it climbs to 71%). See herdTarget() for both measurements.
+    repairLadder: [7, 6, 5, 4],
+    // How long each rung lasts. Bounded above by starvation, not by taste: on
+    // a pasture at 40%, holding 7 head kills the herd in 12/16 runs and 6 head
+    // in 3/16, while 5 and 4 are clean. The ladder has to move through the top
+    // rungs briskly — see the sweep in CLAUDE.md for what each value costs.
+    rungSteps: 20,
+    // **The run is deterministic.** Every restart replays this same seed, so
+    // the card plays one authored run rather than a fresh sample.
+    //
+    // It is not just a convenience. The Leader pasture spends its opening on 13
+    // head, which out-harvests Optimal's 8 while the grass lasts, so Leader is
+    // *ahead* early in every run — that part is arithmetic and no parameter
+    // removes it. What the tuning controls is how long that lasts and whether
+    // it is ever repaid: at the shipped settings Leader finishes a median
+    // **-3.0%** across 64 seeds, below Optimal in 59/64. Fixing the seed turns
+    // that 59/64 into a property of the card.
+    //
+    // 836700000 is the pick of 700 candidates, scored on every claim the card
+    // makes: Optimal opens at **60%**, the configured value, and settles at 71%
+    // inside a 55-75% band without ever wiping out; the Leader pasture is run
+    // down to **43%** by step 21, is not back over 70% until step **80**, and
+    // reaches the norm at step **121**; its herd never falls below the 4 head it
+    // destocks to; it is ahead of Optimal only over steps 0-42 and finishes
+    // **-7.0%**; Greedy's herd is gone by step 88 and its pasture ends at 6%.
+    //
+    // Set this to null for a random seed per run. The sim is identical either
+    // way — it just stops being reproducible, and the ordering goes back to
+    // ~59/64 rather than certain.
+    fixedSeed: 836700000,
+    brownCows: 2,   // the norm, per shepherd: 2 each = 8 head
     moveFraction: 0.55,
     sampleEvery: 1
   };
@@ -136,7 +281,12 @@
   let steps = 0;
   let playing = false;
   let finished = false;
-  let speed = 8;   // runs start fast-forwarded; the button cycles round to 1x
+  let speed = 3;   // runs start fast-forwarded; the button cycles round to 1x.
+                   // Was 8x, when a run was 10,000 steps and needed it. At the
+                   // 500-step horizon 3x is ~37s end to end, which is the same
+                   // opening speed as Simulations 1 and 2. Both this and the
+                   // setSpeed() call at wire-up have to say 3 — this value only
+                   // stands on its own if the button is missing.
   let stepClock = 0;
   let slots = [new Map(), new Map(), new Map()];
 
@@ -156,7 +306,7 @@
   //
   // It is cleared and re-set rather than latched, because reaching the norm is
   // not always permanent the first time. As tuned the repair always fires
-  // before any follower joins, so the norm arrives once, around step 440.
+  // before any follower joins, so the norm arrives once, around step 200.
   // Under the older fixed-schedule version it genuinely mattered: the grass
   // could hold above `recoverBelow` past the last follower, and the pasture
   // would reach 2-each early, *leave* the norm when the repair finally fired,
@@ -165,27 +315,81 @@
   let normStep = null;
   const FOLLOWERS = 3;         // shepherds 1-3; shepherd 0 is the leader
 
-  function updateNorm(target) {
-    const onNorm = target === CONFIG.brownCows && switched.size === FOLLOWERS;
+  function updateNorm(pasture) {
+    const per = [0, 0, 0, 0];
+    pasture.herd.forEach((cow) => { per[cow.shepherd]++; });
+    const onNorm = switched.size === FOLLOWERS
+      && per.every((n) => n === CONFIG.brownCows);
     if (onNorm === (normStep !== null)) return;
     normStep = onNorm ? steps : null;
     scene.setNormStep(normStep);
   }
 
-  function leaderTarget(pasture) {
+  // ---- The leader's prescription ---------------------------------------
+  //
+  // The repair is a **ladder of whole-pasture herd sizes**, not a single
+  // destock. Once the pasture has visibly failed the leader walks the herd
+  // down `repairLadder` one rung at a time, `rungSteps` apart, and holds the
+  // bottom rung until the grass is back to `recoverUntil` — then the norm
+  // (`brownCows` each = 8 head) for good.
+  //
+  // Two measured facts shape the ladder, and both are easy to get wrong:
+  //
+  //  * **The decline cannot happen at 8 head.** Eight head is the carrying
+  //    capacity, so from a 60% opening it *climbs* to 71% rather than falling
+  //    (measured 16 seeds, 300 steps: 7 head -> 78%, 8 head -> 71%, neither
+  //    ever reaching 40%). Only 10+ head draw the pasture down, and those
+  //    starve their own herd. So the fall from 60% to ~40% is done by the
+  //    greedy opening herd, and the ladder is purely the way back.
+  //
+  //  * **The top rungs are lethal if the ladder lingers on them.** Held on a
+  //    pasture grazed to 40% for 400 steps (16 seeds): 4 head climbs back to
+  //    60% in 16/16 with no deaths, 5 head 16/16 / no deaths, 6 head 12/16
+  //    with 3 deaths, 7 head 4/16 with **12 deaths**, 8 head 2/16 with **16**.
+  //    The ladder may pass through 7 and 6, it may not sit there. That is what
+  //    `rungSteps` is bounded by — see CLAUDE.md for the sweep.
+  function herdTarget(pasture) {
     const grass = pasture.grassFraction();
     if (!leanFired && grass < CONFIG.recoverBelow) {
       leanFired = true;
       repairStep = steps;
     }
-    // Ends on the grass coming back, not on a timer — but not before
-    // `minRepairSteps`, which is what keeps a visible gap on the chart. Both
-    // latches are one-way, so the pasture converges instead of flapping.
-    if (leanFired && !leanDone && grass >= CONFIG.recoverUntil
-        && steps >= repairStep + CONFIG.minRepairSteps) {
-      leanDone = true;
+    if (leanFired && !leanDone && grass >= CONFIG.recoverUntil) leanDone = true;
+    if (!leanFired || leanDone) return CONFIG.brownCows * 4;
+    const rung = Math.floor((steps - repairStep) / CONFIG.rungSteps);
+    return CONFIG.repairLadder[Math.min(rung, CONFIG.repairLadder.length - 1)];
+  }
+
+  // Spread `head` cows over all four shepherds, as evenly as possible and
+  // biggest-herd-first, so a 7 is 2/2/2/1 rather than a lump.
+  //
+  // **The ladder is a whole-pasture number, so it can only be applied once
+  // every shepherd is following.** Dividing it among the shepherds who have
+  // joined so far does not under-shoot, it over-shoots wildly: with only the
+  // leader signed up, a rung of 7 put all seven cows on that one shepherd
+  // while the other three were still on their greedy picks, taking the pasture
+  // to *16* head at the exact moment it was supposed to be destocking.
+  function applyHerd(pasture, head) {
+    const base = Math.floor(head / 4);
+    const extra = head % 4;
+    for (let i = 0; i < 4; i++) {
+      pasture.setShepherdCount(i, base + (i < extra ? 1 : 0));
     }
-    return leanFired && !leanDone ? CONFIG.leanCows : CONFIG.brownCows;
+  }
+
+  // What the leader actually does on a given step. Until all three followers
+  // have joined there is no whole-pasture target to apply, so the leader simply
+  // plays the norm itself and whoever has joined mirrors it; the ladder takes
+  // over the moment the pasture is fully under its control.
+  function applyLeaderPolicy(pasture) {
+    const head = herdTarget(pasture);
+    if (switched.size === FOLLOWERS) {
+      applyHerd(pasture, head);
+    } else {
+      pasture.setShepherdCount(CONFIG.leader, CONFIG.brownCows);
+      switched.forEach((i) => pasture.setShepherdCount(i, CONFIG.brownCows));
+    }
+    updateNorm(pasture);
   }
 
   // The greedy pasture starves its herd out and then, with nothing eating it,
@@ -223,14 +427,25 @@
     slots = [new Map(), new Map(), new Map()];
 
     // One seed for all three pastures: same starting grass, same dice, so any
-    // difference between them comes from the herd-size policy alone.
-    const seed = Math.floor(Math.random() * 1e9);
+    // difference between them comes from the herd-size policy alone. It is also
+    // the *same* seed on every run unless `fixedSeed` is null — see CONFIG.
+    const seed = CONFIG.fixedSeed === null || CONFIG.fixedSeed === undefined
+      ? Math.floor(Math.random() * 1e9)
+      : CONFIG.fixedSeed;
 
-    const greedy = window.PastureModel.create({ seed, regrowBase: CONFIG.regrowBase });
+    const greedy = window.PastureModel.create({
+      seed, regrowBase: CONFIG.regrowBase,
+      regrowPerNeighbour: CONFIG.regrowPerNeighbour, startGrass: CONFIG.startGrass,
+      highGrass: CONFIG.highGrass
+    });
     greedy.seed(0);
     CONFIG.personalTop.forEach((n, i) => greedy.setShepherdCount(i, n));
 
-    const optimal = window.PastureModel.create({ seed, regrowBase: CONFIG.regrowBase });
+    const optimal = window.PastureModel.create({
+      seed, regrowBase: CONFIG.regrowBase,
+      regrowPerNeighbour: CONFIG.regrowPerNeighbour, startGrass: CONFIG.startGrass,
+      highGrass: CONFIG.highGrass
+    });
     optimal.seed(CONFIG.brownCows);
 
     // The leader pasture opens *identically* to the greedy one — all four
@@ -240,7 +455,11 @@
     // plays greedy until its first reconsideration at step `reconsiderEvery`,
     // which is what lets the pasture fall far enough for the repair to be a
     // repair.
-    const leader = window.PastureModel.create({ seed, regrowBase: CONFIG.regrowBase });
+    const leader = window.PastureModel.create({
+      seed, regrowBase: CONFIG.regrowBase,
+      regrowPerNeighbour: CONFIG.regrowPerNeighbour, startGrass: CONFIG.startGrass,
+      highGrass: CONFIG.highGrass
+    });
     leader.seed(0);
     CONFIG.personalTop.forEach((n, i) => leader.setShepherdCount(i, n));
 
@@ -310,7 +529,7 @@
 
     // The leader *looks* on this cadence; it only *acts* on reconsider steps
     // below. Sensing has to be the faster of the two — see CONFIG.watchEvery.
-    if (steps % CONFIG.watchEvery === 0) leaderTarget(leaderModel);
+    if (steps % CONFIG.watchEvery === 0) herdTarget(leaderModel);
 
     // Followers copy the leader only once the pasture has visibly failed, then
     // one at a time. The moment one joins it mirrors the leader's current
@@ -319,17 +538,17 @@
       for (let idx = 1; idx <= FOLLOWERS; idx++) {
         if (switched.has(idx) || steps < repairStep + idx * CONFIG.joinEvery) continue;
         switched.add(idx);
-        const target = leaderTarget(leaderModel);
-        leaderModel.setShepherdCount(idx, target);
-        updateNorm(target);
+        applyLeaderPolicy(leaderModel);
       }
     }
 
-    if (steps > 0 && steps % CONFIG.reconsiderEvery === 0) {
-      const target = leaderTarget(leaderModel);
-      leaderModel.setShepherdCount(CONFIG.leader, target);
-      switched.forEach((idx) => leaderModel.setShepherdCount(idx, target));
-      updateNorm(target);
+    // The ladder moves on its own clock, so the leader re-applies it every
+    // `rungSteps` as well as on its own reconsideration — otherwise a rung
+    // could be skipped entirely when the two cadences do not line up.
+    const onRung = leanFired && !leanDone
+      && (steps - repairStep) % CONFIG.rungSteps === 0;
+    if (steps > 0 && (steps % CONFIG.reconsiderEvery === 0 || onRung)) {
+      applyLeaderPolicy(leaderModel);
     }
 
     models.forEach((model) => model.step());
@@ -363,10 +582,13 @@
     });
   }
 
-  // The run never ends, so the line under the card is a running scoreboard
-  // rather than a verdict: who is ahead right now, and by how much over the
-  // runner-up. Recomputed from the models every step, so it can never claim
-  // an outcome the pastures did not produce.
+  // While a run is going the line under the card is a running scoreboard rather
+  // than a verdict: who is ahead right now, and by how much over the runner-up.
+  // It switches to "After N steps — X wins" at the horizon. Recomputed from the
+  // models every step, so it can never claim an outcome the pastures did not
+  // produce — which matters most in exactly the case it is there for, Optimal's
+  // own herd wiping out (6/200 runs at this seed-bank rate), where the honest
+  // report is that Leader won.
   const num = (n) => n.toLocaleString();
 
   function showStanding() {
@@ -492,7 +714,7 @@
     ffBtn.addEventListener("click", () => {
       setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]);
     });
-    setSpeed(8);
+    setSpeed(3);
   }
 
   function togglePlay() {

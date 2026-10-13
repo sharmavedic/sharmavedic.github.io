@@ -30,7 +30,8 @@ way.
 | `js/norms.js` | Paired-pasture **scene** (two stacked pastures, weather strip, harvest chart) → `window.normsScene`. **Not currently loaded** — see Simulation 3 note below |
 | `js/norms-sim.js` | Paired-pasture **driver** (seasons + the two norms) → `window.normsSim`. **Not currently loaded**, same reason |
 | `js/leader-emergence.js` | Project 02's **replacement** visual (experimental) — three small autoplaying looping diagrams (no controls, no sim/scene split): personal-utility agents drifting past a fixed spotlight, an opinion leader converging from arrows, then the leader's norm flowing back out. Agents in all three steps are `ShepherdSprite` figures (needs `js/shepherd-sprite.js` loaded first), sized via a shared radius-to-scale helper; Step 3's travelling flow stays a plain dot and always renders behind the agents |
-| `js/hero-frame.js` | The hero photo's **blob builders** — tiny blobs that build a frame around `assets/headshot.jpg`, close red curtains over the finished picture, and open them on the photo in colour with confetti. Autoplaying, no controls, no sim/scene split, like `leader-emergence.js`. Plays **exactly once**, the first time the photo scrolls into view — the `IntersectionObserver` disconnects itself right after, so leaving and returning does not replay it. The entire animation is a pure function of one number — `window.heroFrame.render(t)`, t in 0..1 — which is the only way to inspect a mid-build frame headlessly |
+| `js/hero-frame.js` | The contact-page photo's **blob builders** — tiny blobs that build a frame around `assets/headshot.jpg`, close red curtains over the finished picture, and open them on the photo in colour with confetti. Autoplaying, no controls, no sim/scene split, like `leader-emergence.js`. Plays **exactly once**, the first time the photo scrolls into view — the `IntersectionObserver` disconnects itself right after, so leaving and returning does not replay it. The entire animation is a pure function of one number — `window.heroFrame.render(t)`, t in 0..1 — which is the only way to inspect a mid-build frame headlessly |
+| `js/kinetic-sculpture.js` | Full-screen native WebGL porcelain factory: conveyor and parcels, reciprocating press, silo, pipe bridge, hopper pellets, and quarter-turn inspection rotor. Seven little astronauts with hollow helmets, recessed peach faces, transparent curved visors, and seamless padded suits with chest controls carry objects back and forth, climb a ladder, inspect the press, wander and shrug, or pull a shared trolley in opposite directions. A transparent canvas spans the hero; a CSS mask reduces activity behind the introduction, and the floor draws translucent shadows. Mobile reframes the main production line beneath the text. Static factory geometry is cached; the suit is a cached smooth-union mesh, with walking/reaching deformed in the vertex shader. Glass draws after opaque geometry, back to front, without writing depth or casting shadows. A 2048px shadow map preserves miniature details; all moving poses share a deterministic clock. Includes cursor camera tilt, pause, reduced motion, offscreen/hidden-tab suspension and an inline factory SVG fallback. No dependencies. `window.kineticSculpture.render(seconds)` and `.quarter(seconds)` support visual checks. |
 | `js/commons-lasso.js` | Simulation 1's own tiny blob — the hero photo's builder in a **cowboy hat**, **lassoing the herd-size slider**. Walks in horizontally from the right, stopping just above and a little right of the "1 cow each" label, throws a rope around the real `<input>` thumb, struggles to drag it down, calls in a second blob, and the pair wheeze, slump and leave (back the way they came) if nobody helps — but if the visitor actually drags the slider down themselves while the rope is on, both blobs celebrate and run off instead. Plays once, first scroll into view, same as `hero-frame.js`. Unlike every other decorative scene on the site it is **not** a pure `render(t)` function: its subject is a real form control whose screen position depends on live layout and can move under the visitor's own hand mid-animation, so it drives a small state machine off real elapsed time and recomputes the thumb's position every frame from `getBoundingClientRect()` — see the section below |
 | `js/agents-truck.js` | The **"Building it into agents"** heading (`#agentsHeading`, the Problem section's third `<h3>`) arrives **towed behind a truck**. A blob drives in from off-screen with the real heading hitched to the truck's back, parks, hops out, unhooks it, hops back in and drives off, leaving the heading exactly where it always would have sat. Same blob family, own tokens, plays once — but unlike `commons-lasso.js`'s live form control, the heading's position is measured exactly **once**, before any transform is ever applied to it, and every frame after that only ever offsets from that captured value — see the section below for why that's safe here and wouldn't be for the slider |
 | `js/eaten-metric.js` | The looping diagram in Project 03's `.policy-key` card — one tile, one cow, four phases on repeat: **arrive** (cow walks onto a full tile), **graze** (it eats; the tile fades and a `+1` counts the mouthful), **leave** (cow walks on off the other side), **regrow** (with nobody grazing, the tile eases back to full) — then it loops. Went through two earlier shapes first: a static 2x2 grid with a focus ring moving between frames, then a sliding single-lane filmstrip (Project 02 Step 1-style, one frame visible at a time). Both read as a diagram of four *states*; asked to look like one continuous thing happening to one tile instead, which this is — no grid, no clipping, no multiple frame groups, just one tile and one cow cycling through `render(phase, t)`. The cow is clipped to the tile (`metricCowClip`) so it can walk on/off from beyond the edge without rendering past the frame. Autoplaying, no controls, no sim/scene split, like `leader-emergence.js`, and draws the shared `CowSprite`. Exposes `window.eatenMetric.render(phase, t)` — with `requestAnimationFrame` stubbed, that is the only way to check a mid-animation frame headlessly |
@@ -40,6 +41,40 @@ way.
 
 The scene/sim split is deliberate: scenes own SVG and never simulate, sims own
 state and never touch the DOM except through the scene's published API.
+
+The home factory's camera follows mouse/pen position across the hero, with
+bounded yaw/pitch and frame-rate-independent easing. A radial arctangent curve
+increases sensitivity around 75% of the viewport width and 50% of its height
+(the right half's center), and tapers it toward the edges.
+Leaving the hero or
+blurring the window returns it to its original angle. Camera motion still
+works while the mechanism is paused; touch and reduced motion disable it.
+
+Temporary **Inspect models** controls on the home factory enable cursor-anchored
+wheel zoom (up to 12×), pointer/touch drag to pan, and +/−/Reset buttons.
+Inspection removes the text mask and freezes cursor tilt. The animation's pause
+button still works independently. On the focused canvas, +/− zoom, arrow keys
+pan, 0 resets, and Escape exits; exiting restores the normal home view.
+
+The astronauts' arms use shoulder/elbow/wrist bones with geometry-derived skin weights.
+Each glove follows its wrist as one rigid shape; holding poses solve for palm
+positions around the parcel, keep the palms parallel and facing inward, and place
+the thumbs on top of the grip. At rest, palms face the thighs, fingers hang down,
+and thumbs face forward. Only the shoulder region blends into the torso.
+The arm solver targets the wrist joint; glove rotations pivot at the cuff,
+with the desired palm position converted to a wrist target for carrying.
+Elbows favor a downward bend with modest outward clearance, keeping upper arms
+closer to the torso while preserving the wrist targets and hand orientation.
+Standing/walking use a separate relaxed pose with upper arms about 7° from
+vertical and hands beside the hips; gestures blend out of that pose smoothly.
+Resting, carrying, and raised poses share one fixed shoulder anchor. Gestures
+interpolate wrist targets and solve the joints, never interpolate bone matrices.
+The shader uses dual-quaternion skinning to preserve sleeve volume through
+twists; `packBone` stores real/dual quaternions in the first two columns of each
+bone uniform. Tapered forearms and fitted cuffs avoid inflated segment joins.
+Do not translate glove
+vertices independently or use broad X/Y masks for arm weights: those stretched
+the thumbs, pinched the sleeves, and also moved the outer edges of the boots.
 
 ## Simulation 1 — Tragedy of the commons (`#problem`)
 
@@ -71,9 +106,10 @@ Simulation 1 counterpart of the "collapse is absorbing" finding in Simulation 3
 (which was measured on `pasture-model.js` at 0.011) — same mechanism, now
 confirmed on the live sim (measured at 0.015, unchanged in kind at 0.012 —
 the mechanism is `regrowBase: 0`, not the rate). Note Project 03's greedy
-pasture *does*
-regreen after its herd dies — that is not a contradiction, it carries
-`regrowBase: 0.004`.
+pasture carries a small seed bank (`regrowBase: 0.001`), so it *can* regreen
+after its herd dies where Simulation 1's never can — but at that rate it does
+not get far inside a 500-step run, ending around 13-43% grass with no cows.
+Same mechanism, different setting, no contradiction.
 
 That measurement is what picks the tagline word. It reads "The pasture goes
 **barren** due to overgrazing": *barren* means incapable of producing, which is
@@ -128,9 +164,16 @@ is not a flat block of one colour, which costs the mean nothing.
 | | opens at | set in |
 |---|---|---|
 | Simulation 1 (`#problem`) | **80%** | `resetGrass` in `js/commons-sim.js` (it does not use the model) |
-| Project 03's three pastures | **70%** | `startGrass: 0.7` in `js/pasture-model.js` |
+| Project 03's three pastures | **60%** | `startGrass` in **`js/dynamics-sim.js`**'s own `CONFIG`, passed into `create()` |
 
-Project 03 was dropped to 0.7 by request. Simulation 1 was **left at 0.8 on
+Project 03 opens at **0.60**, below the ~73% its Optimal herd sustains, so that
+card's Optimal pasture climbs over its first ~80 steps and then holds. It ran
+briefly at 0.73 — exactly the equilibrium, giving a flat Optimal line from step
+0 — and was moved down by request; see "The opening" in Simulation 4 for what
+that trades. Note the opening is also no longer taken from
+`js/pasture-model.js`'s `DEFAULTS` (still 0.7 there, which now only affects the
+archived Project 02 visual); Project 03 passes its own.
+Simulation 1 was **left at 0.8 on
 purpose**: measured over 40 seeds at 600 steps with no seed bank, its
 2-cows-each herd survives **35/40 at a 0.7 opening against 38/40 at 0.8**, and
 that card's whole claim is that two cows each is the size the pasture carries.
@@ -146,7 +189,9 @@ shortens the fall into that floor — Project 03's Leader dip went from
 80%→46% (a 34-point fall) to 70%→50% (a 20-point fall) — while costing the
 buffer that keeps the overshoot safe, which is why `recoverBelow` had to rise
 from 0.52 to 0.55. If the goal is a more dramatic collapse, a *higher* opening
-is the lever, not a lower one.
+is the lever, not a lower one. The excursion up to 0.82 bore this out from the
+other side: the dip stayed ~51% (it is pinned by `recoverBelow`) and only the
+fall into it got longer.
 
 **The trap this exposed:** `pasture-model.js` initialised grass in *two*
 places — `create()` and `seed()` — and `seed()` carried its own hardcoded fill
@@ -281,23 +326,38 @@ emulation, prestige (see Project 02's write-up) — and two underlying modes,
 someone else's). Three 6x6 pastures run side by side, same seed and starting
 grass each time (drawn fresh per run/restart, not a fixed literal — the
 verdict text is computed from whichever of the three actually wins, so it
-never claims an outcome that didn't happen), same grazing model as Simulation
-1, only the herd-size policy differs:
+never claims an outcome that didn't happen). The grazing *rules* are Simulation
+1's, but **the regrowth is tuned differently here** (`regrowPerNeighbour:
+0.0092`, `highGrass: 2` against Simulation 1's 0.012 / 3) — see "Why this card
+does not share Simulation 1's regrowth" below. Only the herd-size policy
+differs between the three pastures:
 
 - **Greedy** — shepherds 1-4 at `[4, 4, 3, 2]` cows, the actual top pick of
   the first four agents in Project 01's `MIXED_VIEWS` table (still computed
   rather than chosen — but the table is now *ordered* so that those four sum
   to 13 head, over the pasture's capacity of 10; see the `MIXED_VIEWS` note in
   Simulation 2). Nobody coordinates and nobody ever destocks by choice, so the
-  herd starves out. **It then comes back**: once a shepherd has lost every cow
-  and the empty pasture has regrown past that shepherd's own threshold, it
-  turns its full herd out again — `restockAt: [0.5, 0.6, 0.7, 0.8]` handed out
-  least-greedy-first, so 2 cows returns at 50% grass, 3 at 60%, and the two
-  4-cow shepherds at 70% and 80%. The mapping is *derived from* `personalTop`
-  at load (ties by index), not written down, so it follows the utility table if
-  that changes. The result is a boom-bust cycle rather than one collapse: a
-  typical 600-step run wipes out around step 250 and is back to full stock by
-  step 590.
+  herd starves out — in **200/200** runs, at a median step **108**.
+
+  **It can come back, and at the current seed-bank rate it mostly doesn't.**
+  The restocking rule is still there and still correct: once a shepherd has
+  lost every cow and the empty pasture has regrown past that shepherd's own
+  threshold, it turns its full herd out again — `restockAt: [0.5, 0.6, 0.7,
+  0.8]` handed out least-greedy-first, so 2 cows returns at 50% grass, 3 at
+  60%, and the two 4-cow shepherds at 70% and 80%. The mapping is *derived
+  from* `personalTop` at load (ties by index), not written down, so it follows
+  the utility table if that changes.
+
+  What changed is the rate it feeds on. At `regrowBase: 0.004` this produced a
+  genuine boom-bust cycle — wipe out around step 250, back to full stock by
+  step 590 — and that was the described behaviour for a long time. At the
+  current **0.001** the grass does not climb back fast enough to reach even the
+  lowest threshold inside 500 steps: the shipped run ends at **13% grass with 0
+  head**. So the card now shows a collapse that stays collapsed, chosen
+  deliberately (see the `regrowBase` sweep below) over the recovery reading.
+  The restock path is not dead code — it still fires in the tail of runs that
+  regreen faster — but it is no longer what a typical run looks like, and any
+  copy or caption describing Greedy as cycling is now wrong.
 - **Optimal** — every shepherd at 2 cows, forever. Was called *Fixed* and
   framed as a baseline; it is now named for what it is, the welfare-optimal
   norm and the most the pasture carries indefinitely (see Simulation 1's
@@ -328,9 +388,13 @@ never claims an outcome that didn't happen), same grazing model as Simulation
   **Leader finishes below Optimal, and that is the point.** By the time the
   followers arrive the pasture is grazed down to around 50%. The leader's
   first instruction is therefore a repair, not the norm: once grass falls
-  under `recoverBelow: 0.55` it calls for `leanCows: 1`, and holds there until
-  the grass is back to `recoverUntil: 0.80` *and* `minRepairSteps: 400` have
-  passed — then returns to 2 for good. The harvest given up
+  under `recoverBelow: 0.50` it calls for `leanCows: 1`, and holds there until
+  the grass is back to `recoverUntil: 0.80` — just under the measured ~82%
+  equilibrium for eight head — then returns to 2 for good. So the red marker
+  lands on a **state**: the leader hands the norm back once it has restored the
+  commons to roughly what the norm can sustain. There is no `minRepairSteps`
+  floor any more — it is **0**, and the grass threshold is the whole rule. The
+  harvest given up
   during the repair is never won back, so the two lines run parallel
   afterwards, permanently apart. Adapting to the grass is what the damage
   *costs* here; it is not a way to beat the norm. That is what makes the
@@ -351,25 +415,30 @@ never claims an outcome that didn't happen), same grazing model as Simulation
   pins the depth to `recoverBelow` instead of to the dice.
 
   **The recoverable floor depends on how many cows are still eating, and that
-  is what sets every number here.** Measured by grazing 13 head down to a
-  target level, destocking, and giving the pasture 4,000 steps (16 seeds
-  each, `regrowBase: 0.004`):
+  is what sets every number here.** Re-measured under the current tuning
+  (`regrowPerNeighbour: 0.0092`, `highGrass: 2`, `regrowBase: 0.001`) by grazing
+  13 head down to a target, destocking, and giving the pasture 2,000 steps —
+  16 seeds per cell, "recovered" = back to 70%:
 
-  | grass at destock | recovers to 78% with **4 head** (1 each) | with **8 head** (2 each) |
+  | grass at destock | **4 head** (1 each) recovers / herd dies | **8 head** (2 each) recovers / herd dies |
   |---|---|---|
-  | 65% | 16/16 | 16/16 |
-  | 55% | 16/16 | 9/16 |
-  | 50% | 16/16 | **0/16** |
-  | 45% | 16/16 | 0/16 |
-  | 40% | 13/16 | 0/16 |
-  | 35% | 9/16 | 0/16 |
-  | 30% | **1/16** | 0/16 |
+  | 60% | 16/16 / 0 | 13/16 / 1 |
+  | 55% | 16/16 / 0 | 12/16 / 5 |
+  | 50% | 16/16 / 0 | 15/16 / **11** |
+  | 45% | 16/16 / 0 | 16/16 / 15 |
+  | 40% | 16/16 / 0 | 16/16 / 15 |
+  | 35% | 16/16 / **0** | 16/16 / 16 |
+  | 30% | 16/16 / **3** | 16/16 / 16 |
+  | 25% | 16/16 / **11** | 16/16 / 16 |
 
-  So the repair must catch the pasture **before the followers settle on two
-  cows** — at 8 head nothing below ~55% ever comes back — and must still leave
-  enough for four head to work with, which runs out around 35-40%. That two-
-  sided constraint is the whole design, and it is why the followers go to
-  *one* cow on joining rather than straight to the norm.
+  **The binding constraint is the herd, not the field** — and that inverts the
+  old reading of this table. At one cow each the *pasture* climbs back to 70%
+  from every level tested, down to 20%: four head barely touch it and
+  `highGrass: 2` means thin grass still seeds. What fails is the cows, who start
+  starving at 30% and are mostly gone by 25%. So the rule is **destock before
+  the pasture reaches ~35%**, with everything above that safe for the field.
+  The 8-head column is why the followers go to *one* cow on joining rather than
+  straight to the norm: at two cows each the herd dies from 50% down.
 
   Three further design points, all measured, all easy to get wrong:
   - **The repair fires at most once a run** (`leanFired` in
@@ -378,14 +447,46 @@ never claims an outcome that didn't happen), same grazing model as Simulation
     leader oscillating between 1 and 2 cows forever. That variant measured 10%
     below Optimal but never settled, which reads as a broken policy rather than
     a learned one.
-  - **`recoverBelow: 0.52` is the floor that is still safe**, and it now sets
-    the depth of the dip the card shows rather than just arming a repair.
-    Swept over 40 seeds: 0.52 bottoms at a median **47%** (worst 37%) with
-    **0/40** pastures hitting zero and zero cows starved; 0.50 is 1/40 and
-    0.55 is 2/40, and a run that goes loses ~3,000 cows. Confirmed on the live
-    card over 60 runs — median trough **46%**, worst **39%**, 0/60 collapses,
-    60/60 alive, zero starvation. Raising it makes the dip shallower, lowering
-    it deeper, and below 0.45 it stops being survivable.
+  - **The repair is a ladder, not a single destock** (`repairLadder: [7, 6, 5,
+    4]`, `rungSteps: 20`). Once all three followers have joined, the leader
+    walks the *whole pasture* down one rung every 20 steps and holds the bottom
+    rung until the grass is back to `recoverUntil: 0.60`, then the norm. Asked
+    for as "make the recovery slowly by changing it to 7 heads or 6 heads
+    eventually bringing it to 4 heads until the 60% is reached then go to 8".
+
+    Two measured facts bound it, and both were arrived at the hard way:
+
+    * **The decline cannot be done at 8 head.** Eight head is the carrying
+      capacity, so from a 60% opening it *climbs* to 71% rather than falling —
+      measured 16 seeds over 300 steps: 6 head → 83%, 7 → 78%, 8 → 71%, none
+      of them ever reaching 40%. Only 10+ head draw the pasture down, and 10-13
+      head wipe out their own herd every time. So the fall from 60% to ~40% is
+      done by the greedy opening herd, and the ladder is purely the way back.
+      "Hold ~8 head while the pasture declines" is not a tuning problem, it is
+      arithmetic.
+    * **The top rungs are lethal if the ladder sits on them.** Held on a
+      pasture grazed to 40% for 400 steps (16 seeds), reaching 60% again: 4
+      head 16/16 with 0 deaths, 5 head 16/16 / 0, 6 head 12/16 / **3 deaths**,
+      7 head 4/16 / **12 deaths**, 8 head 2/16 / **16**. The ladder may pass
+      through 7 and 6; it may not linger. `rungSteps: 20` is what keeps the
+      descent brisk enough.
+
+    **`recoverBelow: 0.50` is the depletion knob** — the followers stay greedy
+    until it trips, so lowering it means a longer greedy phase and a deeper
+    trough. Measured across 24 seeds, trough and the step the pasture is back
+    over 70%: 0.64 → 59% / step 36; 0.58 → 55% / 54; **0.50 → 46% / 119**;
+    0.46 → 42% but worst-case 33%; 0.42 → 37% / worst 29%, which is where herds
+    start dying.
+
+    **The ladder costs robustness, and that is the open risk in this card.** A
+    gentler destock leaves more cows eating, so the repair is cheaper and the
+    Leader/Optimal gap narrows: measured over 64 random seeds, Leader finishes
+    a median **−1.0%** and is below Optimal in only **41/64**, against −6.1%
+    and 62/64 with the old single destock. There is also a tail where the
+    pasture goes over the edge — **2/64** leader herds die and 2/64 Optimal
+    herds do. `fixedSeed` is what keeps the shipped run clear of all of it, but
+    **this configuration is materially more fragile than the one it replaced**,
+    and unfixing the seed is no longer safe without re-tuning.
   - **`watchEvery: 5` is not `reconsiderEvery: 20`.** The leader *looks* every
     5 steps and *acts* every 20. They have to be separate: at the greedy
     opening of 13 head the pasture loses roughly **one percentage point of
@@ -394,41 +495,178 @@ never claims an outcome that didn't happen), same grazing model as Simulation
     difference between a recoverable pasture and a dead one. This single change
     is what took the repair from firing in 9-15 of 24 runs to **24/24**.
 
-  **The gap between Leader and Optimal *is* the length of the repair**, at
-  about 1% of final harvest per 200 steps. That is why the repair has a
-  minimum length at all: on the grass rule alone it lasts ~100 steps, the gap
-  collapses to **-0.09%**, and Leader then *beats* Optimal in 9 of 24 seeds —
-  which breaks the section outright (see the ordering note below). Measured at
-  the 0.7 opening, 24 seeds, full horizon:
+  **Why this card does not share Simulation 1's regrowth.** Project 03 runs
+  `regrowPerNeighbour: 0.0092` and `highGrass: 2`, against Simulation 1's 0.012
+  and 3. This is the most consequential thing in the section and it was arrived
+  at by being wrong twice, so the reasoning matters.
+
+  *The symptom.* With Simulation 1's numbers, the Optimal pasture (8 head)
+  settles at **82%** grass and stays there. On a card that opens lower, you
+  watch it *climb* — and that is a tell, not a cosmetic issue: a pasture that
+  accumulates grass under a herd is not being grazed at capacity, so two cows a
+  shepherd would not actually be the welfare-optimal norm, and the "Optimal"
+  label would be a lie. Measured at 0.012 / highGrass 3, 2,000 steps, 16 seeds:
+  8 head harvests **3208** and survives 15/16; 9 head harvests 1077 and
+  survives **0/16**.
+
+  *Why that looks contradictory and isn't.* The old model is **bistable**:
+  regrowth is proportional to green *neighbours* above `highGrass`, so a thinned
+  pasture loses its own seed stock and crashes. There is a stable state near 82%
+  and a collapse basin, with nothing in between — a ninth cow does not settle
+  the pasture at 70%, it tips the whole thing to zero. So 8 head genuinely was
+  the largest sustainable herd, while *also* leaving the pasture visibly
+  un-grazed. Both readings were true at once.
+
+  *The fix is `highGrass`, not the rate.* Dropping the seeding threshold from 3
+  to 2 lets thin grass still seed its neighbours, which replaces the cliff with
+  a **graded** response — the steady grass level now falls as the herd grows
+  instead of jumping to collapse. Measured at 0.012 / highGrass 2: 8 head →
+  83%, 9 → 80%, 10 → 76%, 11 → 71% (8/16), 12 → dies. That is a pasture that
+  can be held at an intermediate level, which is what the card needs; it also
+  moved capacity to 10 head, so the rate had to come down to put the optimum
+  back at 8. Measured, 24 seeds, 2,000 steps, `highGrass: 2`:
+
+  | `regrowPerNeighbour` | 8 head | 9 head | 10 head |
+  |---|---|---|---|
+  | 0.0090 | 22/24 @ 72% | 0/24 | 0/24 |
+  | **0.0092** | **24/24 @ 73%** | **0/24** | **0/24** |
+  | 0.0095 | 24/24 @ 75% | 3/24 | 0/24 |
+  | 0.0098 | 24/24 @ 77% | 13/24 | 0/24 |
+  | 0.0100 | 24/24 @ 78% | 20/24 | 0/24 |
+
+  **0.0092 is the point where two cows a shepherd is unambiguously the largest
+  sustainable herd *and* sits on a visibly grazed pasture (73%).** Nine head
+  dies in 24 of 24 runs. `startGrass` is then set to that same 73% so Optimal
+  opens at its own steady state and the line is flat. **The three numbers move
+  together** — change the rate and you must re-measure the equilibrium and reset
+  both `startGrass` and `recoverUntil`.
+
+  *What this costs:* Project 03's dynamics are no longer numerically identical
+  to Simulation 1's, so the help dialog no longer claims they are (it says the
+  rules are the same and the regrowth is tuned differently). Simulation 1 was
+  deliberately **not** changed to match: its own balance table, the 2-cow
+  carrying capacity behind Project 01's utility tables, and the "collapse is
+  absorbing" finding all rest on 0.012 / highGrass 3 / `regrowBase: 0`, and
+  re-running all of that is a separate job. **If the two are ever unified, do it
+  from Simulation 1's side and re-run its balance table first.**
+
+  **The one thing no parameter fixes: Leader is ahead early.** It opens with 13
+  head against Optimal's 8 on an identical pasture, so it out-harvests Optimal
+  until the damage bites — that is arithmetic. What the tuning controls is how
+  long that lasts and whether it is ever repaid. The repair thresholds were
+  gridded for exactly this (24 seeds, measured at the 0.73 opening; the
+  numbers shift a little at the 0.60 opening but the ranking does not):
+
+  | `recoverBelow` / `recoverUntil` | Leader final | below Optimal | ahead for | norm lands |
+  |---|---|---|---|---|
+  | 0.55 / 0.73 | −0.1% | 13/24 | 128 steps | 121 |
+  | 0.60 / 0.80 | −2.5% | 21/24 | 57 steps | 101 |
+  | 0.64 / 0.80 | −2.7% | 24/24 | 47 steps | 81 |
+  | **0.50 / 0.80** | **−3.0%** | **59/64** | **135 steps** | **181** |
+
+  **0.50 / 0.80 is shipped.** 0.64 was briefly used, as the only cell below
+  Optimal in *every* seed, but its dip was shallow (59%) and the pasture was
+  back over 70% by step 36 — the collapse barely registered. Deepening it to
+  0.50 costs a little certainty (59/64 rather than 24/24, recovered by the
+  fixed seed) and lengthens the early lead to ~135 steps, in exchange for a
+  trough of 46% and a recovery that takes until step 119. Note `recoverUntil:
+  0.80` sits *above* the 73% steady state — with only four head on it the
+  pasture overshoots, and waiting for that overshoot is part of what makes the
+  repair cost anything.
+
+  **`fixedSeed: 836700000`** then turns 62/64 into certainty. It is the pick of
+  700 candidates: Optimal opens at 60% — the configured value — and settles at
+  71% inside a 55-75% band without wiping out; the Leader pasture is run down to
+  43% by step 21, is not back over 70% until step 80, and reaches the norm at
+  step 121; its herd never falls below its four destocked head; it is ahead of
+  Optimal only over steps 0-42 and finishes −7.0%; Greedy's herd is gone by step
+  88 and its pasture ends at 6%.
+
+  The historical version of this constraint, kept because it explains the
+  shape of the code: at the old 10,000-step horizon the gap between Leader and
+  Optimal genuinely *was* the length of the repair, at about 1% of final
+  harvest per 200 steps, so `minRepairSteps` existed to buy that gap. Measured
+  then, 24 seeds at the full horizon:
 
   | repair length | red line lands | Leader vs Optimal | below Optimal |
   |---|---|---|---|
   | grass rule only (~100) | step 200 | −0.09% | **15/24** |
   | +200 hold | step 300 | −0.6% | 24/24 |
-  | **+400 hold** | **step 500** | **−1.8%** | **24/24** |
-  | +600 hold | step 700 | −2.6% | 24/24 |
+  | +400 hold | step 500 | −1.8% | 24/24 |
   | +1200 hold | step 1300 | −5.6% | 24/24 |
 
-  400 was chosen because the chart window is 500 steps wide, so the collapse
-  (~step 30-90) and the red line are on screen together — the whole story
-  readable in one frame. **`recoverUntil` is not the real knob**: 0.70 and
-  0.80 measure identically, because four head crosses both within ~100 steps.
-  The hold is what moves anything.
+  `minRepairSteps` is kept in `CONFIG` at 0 rather than deleted, because that
+  is the knob a longer horizon would need back.
 
-`regrowBase: 0.004` throughout (Project 02's seed-bank value — without it,
-every policy eventually collapses to 0% grass over a 600-step horizon and the
-comparison stops being interesting). Metric is the same cumulative
+**Eight head sits at ~73% grass under this card's tuning**, and that number is
+measured, not chosen: see "Why this card does not share Simulation 1's
+regrowth" above for how `regrowPerNeighbour: 0.0092` / `highGrass: 2` was
+arrived at and why `startGrass` and `recoverUntil` are positioned against it.
+The short version: at that tuning 8 head survives 24/24 and holds the pasture
+at 73%, 9 head dies 24/24, so two cows a shepherd is the largest sustainable
+herd *and* the pasture visibly shows the grazing.
+
+`startGrass`, `regrowPerNeighbour` and `highGrass` are all passed into
+`PastureModel.create()` from Project 03's own `CONFIG` rather than inherited
+from the model's `DEFAULTS`, specifically so this card can be tuned without
+touching Simulation 1's balance table or the archived Project 02 visual. Do not
+simplify them back out.
+
+Note the realised opening is a **draw**, not `startGrass` itself: the grid
+carries a one-level jitter, so a given seed can open a few points off the
+configured mean (the shipped seed opens 72% against a configured 0.73). There
+is no systematic bias, but it is why `fixedSeed` is picked on its *measured*
+behaviour rather than trusted to the config.
+
+`regrowBase: 0.001` throughout — a seed bank is needed at all because without
+one every policy eventually collapses to 0% grass and the comparison stops
+being interesting. It sat at Project 02's own 0.004 and was walked down from
+there in stages by request, so it is **no longer the same number as Project
+02's** and should not be re-synced to it by tidying.
+
+**The sweep that set it was run under the old regrowth tuning** (0.012 /
+`highGrass: 3`), where the binding constraint was Optimal's own wipeout rate —
+flat at ~3% down to 0.002, then 7% at 0.001 and 14.5% at 0, which is a card
+that shows a dead pasture labelled "Optimal" about one run in seven:
+
+| `regrowBase` (at 0.012 / highGrass 3) | Optimal wiped | Greedy final grass |
+|---|---|---|
+| 0.004 | 4/200 (2%) | 67% |
+| 0.003 | 7/200 (3.5%) | 63% |
+| 0.002 | 6/200 (3%) | 34% |
+| 0.001 | 14/200 (7%) | 9% |
+| 0 | 29/200 (14.5%) | 0% |
+
+**Under the current tuning that constraint is gone**, which is what allowed the
+drop to 0.001. With `highGrass: 2` the pasture is no longer bistable, so
+Optimal does not tip into collapse: measured 24 seeds at 0.0092 / highGrass 2,
+Optimal wiped **0/24** at every seed-bank rate from 0.002 down to 0. What the
+rate now controls is purely the *greedy* pasture's ending — 0.002 lets it
+regreen to 64% and restock to 9 head, 0.001 leaves it at 43% with no cows, and
+0 leaves it at 0%. 0.001 is the setting that keeps the herd dead (the bleaker
+read, chosen earlier) while leaving Optimal's line the flattest of the three.
+
+Note this is a *different knob* from `regrowPerNeighbour` (0.012, in
+`js/pasture-model.js`), which is shared with Simulation 1 and sets the
+carrying capacity the whole site's "Optimal" label depends on. `regrowBase` is
+spontaneous regrowth on a bare tile and is Project 03's alone; changing it does
+not touch the capacity sweep. Do not confuse them.
+
+Metric is the same cumulative
 grass-eaten used in Simulation 3, read directly off `model.eaten` — **do not
 rescale it** (an early prototype multiplied by 0.2 out of confusion with the
 "0.2 grass levels per cow-step" identity below and got numbers 5x too small;
 `model.eaten` is already in grass-levels, no conversion needed).
 
-**A run is `horizon: 10000` steps** — about 4.5 minutes at the opening 8×
-(`stepMs: 220`) — and then stops on its result, with play/pause turning back
-into restart the way the other cards do. The line under the card is a live
+**A run is `horizon: 500` steps** — about 37s at the opening 3× (`stepMs: 220`)
+— and then stops on its result, with play/pause turning back into restart the
+way the other cards do. It was `10000` steps at 8× (~4.5 minutes) until both
+were cut by request; the whole run now fits the chart's 500-step window, so the
+collapse, the repair, the red marker and the finish are all readable in one
+frame without waiting. The line under the card is a live
 standing rather than a verdict: it recomputes from `model.eaten` every step
 and names who leads and by how much over the runner-up (`showStanding()`),
-switching from "Step N — X leads" to "After 10,000 steps — X wins" at the end,
+switching from "Step N — X leads" to "After 500 steps — X wins" at the end,
 so it can never claim an outcome the pastures did not produce. It is not an
 `aria-live` region — announcing a change every step would flood a screen
 reader. `step()` returns early once `finished`, so a hand-driven call (console,
@@ -454,7 +692,8 @@ Three things about it are load-bearing:
   since the count only lands on the next reconsideration.
 - **It clears and re-sets rather than latching.** The repair now fires in
   every run before any follower joins, so in practice the norm arrives once, at
-  a median step **~440**, just after the repair's minimum hold ends. The
+  a median step **~201** (range 181-281), just after the repair's minimum hold
+  ends. The
   clear/re-set
   path is kept because it costs nothing and the ordering is not guaranteed by
   construction — under the old fixed `switchAt` schedule it genuinely mattered,
@@ -463,9 +702,11 @@ Three things about it are load-bearing:
   marker sat at 180 through a stretch the pasture spent on one cow.
 - **It is only visible while that step is inside the 500-step window**, and it
   is deliberately not clamped to the axis when it scrolls off — a marker pinned
-  to the left edge would claim the norm was reached at a step it wasn't. So in
-  a 10,000-step run it shows for ~500 steps and then goes. If it ever needs to
-  stay, that is a change to what the chart's x-axis means, not a tweak.
+  to the left edge would claim the norm was reached at a step it wasn't. At the
+  current `horizon: 500` the window never scrolls, so the marker lands around
+  step 200 and simply stays for the rest of the run; that clamp-refusal only
+  mattered when a 10,000-step run scrolled it off after ~500 steps. Keep it
+  anyway — it is what makes any longer horizon honest again.
 
 The caption is what forced `CHART.top` down 10 units (412 -> 422, `H` 662 ->
 672) with the titles at `TITLE_DY: 48` and the caption at `NORM_LABEL_DY: 12`:
@@ -479,15 +720,23 @@ past the axis, once the string grew from "the norm" to "the optimal norm".
 Verified over 60 sampled frames of a sweep: x stays inside 106.8..536.0 against
 a plot of 76..536.
 
-**The chart is a scrolling window, not the whole run.** It shows the last
-`chartSpan: 500` steps: below 500 the axis is 0..500 and the lines grow into
-it; past that the left edge is `step - 500` and the whole plot scrolls. That
-also solves the memory problem for free — samples are pruned as they leave the
-window (`prune()` in `js/dynamics.js`), so an endless run costs a fixed ~501
-points at full per-step resolution, with no decimation. One sample from
-*before* the left edge is kept so the lines reach it, and `px()` clamps it to
-the axis. Verified at steps 100 / 499 / 501 / 900 / 5000 / 40000: left edge
-tracks `step - 500` exactly and the point count stays at 501.
+**The chart is a scrolling window whose scrolling is currently never
+exercised.** `chartSpan: 500` now equals `horizon: 500`, so the axis stays
+0..500 for a whole run and the three lines simply grow across it — which is the
+point of the shorter horizon. The side block's title says "**Across** 500
+steps" rather than "Last", for exactly that reason.
+
+The scrolling machinery is deliberately left in place: below `chartSpan` the
+axis is 0..500 and the lines grow into it; past it the left edge would be
+`step - 500` and the plot would scroll, pruning samples as they leave the
+window (`prune()` in `js/dynamics.js`) so an endless run costs a fixed ~501
+points at full per-step resolution with no decimation, keeping one sample from
+*before* the left edge so the lines reach it, with `px()` clamping it to the
+axis. Verified back when it ran, at steps 100 / 499 / 501 / 900 / 5000 /
+40000: left edge tracked `step - 500` exactly and the point count stayed at
+501. It costs nothing dormant and is what any horizon above 500 needs back, so
+do not delete it as dead code — but do not trust it untested either, since
+nothing on the page exercises it now.
 
 The plot stops at `CHART.right: 536` of 1000, not the full width — the right
 third is a **stats table** (`SIDE`, `js/dynamics.js`), one row per policy and
@@ -514,8 +763,11 @@ knock-ons, all of them measured rather than guessed:
 - Four value columns need more width than two did, so the plot gave up a
   further 44 units: `SIDE` is now 390 wide (rule 576, 600..990) against 346.
   Column right edges are `COLS` in `js/dynamics.js` — rate 786, grass 852, head
-  910, eaten 990. `eaten` has the widest slot because it is the only five-digit
-  value on the card, `rate` the second widest because `eaten/100` is the long
+  910, eaten 990. `eaten` has the widest slot because it *was* the only
+  five-digit value on the card back at the 10,000-step horizon; at 500 steps it
+  peaks around 800, so every slot is now roomier than it needs to be — the safe
+  direction, and what a longer horizon would want back. `rate` is the second
+  widest because `eaten/100` is the long
   header. Measured at step 4,000: no pair of strings in the block overlaps, the
   longest name ("Optimal", ending 667.5) clears the leftmost header by 40.8,
   and `STAT_PITCH` — which spaced the old under-panel readouts — is gone.
@@ -541,40 +793,64 @@ minimum would fill the plot and turn it into a recent-*rate* chart; not done,
 because it changes what the chart means. The ceiling is `3 * niceStep(peak/3)`
 so the three grid lines read as round numbers instead of 1667 / 3333 / 5000.
 
-**Measured at `startGrass: 0.7`, `regrowPerNeighbour: 0.012`,
-`personalTop: [4,4,3,2]`, `recoverBelow: 0.55`, `recoverUntil: 0.80`,
-`minRepairSteps: 400`, `joinEvery: 5`, `watchEvery: 5` — 40 fresh seeds
-driving the live card, read at the real `horizon: 10000` (medians):**
+**The shipped run, measured** (`startGrass: 0.60`,
+`regrowPerNeighbour: 0.0092`, `highGrass: 2`, `regrowBase: 0.001`,
+`personalTop: [4,4,3,2]`, `recoverBelow: 0.50`, `recoverUntil: 0.60`,
+`repairLadder: [7,6,5,4]`, `rungSteps: 20`, `joinEvery: 5`, `watchEvery: 5`,
+`fixedSeed: 836700000`, `horizon: 500`). The card plays this one run, so these
+are its actual numbers:
 
-| | harvest | vs Optimal | grass | head | starved |
-|---|---|---|---|---|---|
-| Greedy | 9918 | **−38%** | ~22% | 9 | ~170 |
-| Leader | 15733 | **−1.8%** | 84% | 8 | **0** |
-| Optimal | 16018 | — | 85% | 8 | 0 |
+| | harvest | vs Optimal | grass at end | head at end |
+|---|---|---|---|---|
+| Greedy | 170 | **−79%** | 6% | **0** |
+| Leader | 765 | **−5.0%** | ~70% | 8 |
+| Optimal | 805 | — | 71% | 8 |
 
-Leader's pasture opened at a median 69% (range 64-76%), bottomed at **49%**
-(worst 43%), and **0/40 hit zero, 40/40 survived, zero cows starved**. Leader
-finished below Optimal in **39/39** of the runs where Optimal itself survived,
-in a tight band of −1.6% to −1.9%.
+The Leader pasture, sampled every 10 steps (head / grass):
 
-**The one remaining flake is Optimal's own**, and it predates all of this:
-8 head is right at carrying capacity, so the Optimal pasture wipes out in
-about 1 run in 20 (39/40 here; 57/60 measured directly at this opening, 58/60
-at the old 0.8 — i.e. unchanged by the opening). When it goes, the standing
+```
+0:13h/60%  10:13h/51%  20:11h/44%  30:8h/42%  40:6h/44%  50:6h/45%
+60:5h/44%  70:5h/45%   80:4h/54%   90:4h/55%  100:4h/59%  110:4h/67%
+120:4h/73% 130:8h/67%  ... holds at 8 head, ~70%, for the rest of the run
+```
+
+So: the greedy herd takes it from **60% to 42%** by step 30; the ladder walks
+11 → 8 → 6 → 5 → 4 head; the pasture is back over 60% at step **102**; the norm
+(8 head) lands at step **121**, which is where the red marker sits. The herd
+never drops below the four head it destocks to. Optimal opens 60% and settles
+at 71%; Greedy's herd is gone by step 88 and its pasture ends at 6%.
+
+Because the seed is fixed, **`Optimal > Leader > Greedy` is a fact about the
+card, not a probability** — there is no flake rate to quote any more. What
+follows describes what happens if `fixedSeed` is set back to null.
+
+**Optimal's old flake is gone, and the regrowth tuning is why.** Under
+Simulation 1's bistable numbers (0.012 / `highGrass: 3`) the Optimal pasture
+sat right on the capacity cliff and wiped out in roughly 1 run in 30 — 6/200 at
+the 0.7 opening, 4/200 at `regrowBase: 0.004`. At `highGrass: 2` there is no
+cliff to fall off: measured **0/24 wipeouts** across every random-seed sweep at
+0.0092, at every seed-bank rate down to 0, and with the pasture opening at its
+own steady state rather than climbing to it. If it ever does go, the standing
 line correctly reports Leader winning, because it is computed from
-`model.eaten` rather than asserted. Worth fixing one day by giving that
-pasture a little more headroom; not caused by anything in this section.
+`model.eaten` rather than asserted.
 
 **The ordering is the claim.** Optimal on top because 2 cows is the optimum and
 nothing can beat it; Leader below it by the cost of its greedy opening, running
-parallel once it has converged; Greedy far below, still boom-busting. An
+parallel once it has converged; Greedy far below, flat on the floor after its
+herd starves. An
 earlier cut had Leader *ahead* of Optimal by 0.3% — harvest banked while its
 followers were still greedy — which made the label "Optimal" a lie and is
-exactly what the repair rule was introduced to fix. **If a change ever puts
+exactly what the repair rule was introduced to fix. The 0.82 opening broke it
+the same way and far more visibly (+1.2%, Leader leading the whole run), which
+is what the trade-off passage above is about. Note that Leader being ahead for
+the first ~40 steps is **not** that failure: it has 13 head against 8 and can
+hardly be otherwise. The claim is about where the run *ends* and about the
+lead never being repaid. **If a change ever puts
 Leader back above Optimal, the section has broken, whatever the numbers say.**
 
-Greedy is the only failure case left, and it is a clean one: a third less
-harvest, half the pasture gone, and 167 cows starved over a run.
+Greedy is the only failure case left, and it is a clean one: at the 500-step
+horizon it takes **73%** less harvest than Optimal, wipes its herd out in every
+run by a median step 103, and ends with a third of its grass and no cows at all.
 
 **Getting Greedy to fail again took a table reorder, not a parameter.** At
 `regrowPerNeighbour: 0.011` Greedy's old `[4,1,2,3]` collapsed on its own. At
@@ -591,10 +867,14 @@ herd is 13 — so the reorder is no longer what makes Greedy fail; it would now
 fail at 12 head too. The reordered table is kept because Project 01's utility
 tables have to stay fixed anyway, and `[4,4,3,2]` is what they say.)
 
-The greedy pasture then *regreens* over the back half of the run — 83–100%
-grass at step 600 with no cows left. That is the model being honest (regrowth
-resumes once nothing is eating), and it reads well: the commons only recovers
-after the herd that ruined it is gone.
+**The greedy pasture used to regreen over the back half of the run** — 83–100%
+grass at step 600 with no cows left, at `regrowBase: 0.004` and a 600-step
+horizon. That read well: the commons only recovers after the herd that ruined
+it is gone. It is no longer what happens. At the current `regrowBase: 0.001`
+and `horizon: 500` the run ends at **13% grass with no cows**, because
+regrowth resumes but has neither the rate nor the time to get anywhere. The
+mechanism is unchanged and still honest; only the setting moved. Kept here
+because it is the reading to restore if the seed bank ever goes back up.
 
 `greenThreshold` is 0.7 and **now does nothing** — `greenCows` and
 `brownCows` are both 2, so the leader plays 2 whatever the grass reads. The
@@ -602,7 +882,7 @@ tuning that chose 0.7 over 0.65/0.75/0.8 was done when `greenCows` was 3 and
 is no longer live; it is kept above only as the record of why 0.7 is the
 number sitting in `CONFIG` if the rule is ever switched back on.
 
-## Hero photo (`js/hero-frame.js`)
+## Contact photo (`js/hero-frame.js`)
 
 **A sequence authored beat by beat to a spec, in parts.** Five parts, 62.3s of
 beats played at `PACE: 0.65` = **~40s**. It is finished as a piece: the photo
@@ -1336,8 +1616,10 @@ Controls are shared classes on a `.sim-canvas`, aimed per card with custom
 properties (`--play-x`, `--corner-x`, `--ff-y`, `--restart-y`): `.sim-play-btn`,
 `.sim-restart-btn`, `.sim-ff-btn`, plus `.sim-help-btn` / `.sim-help` for the
 "?" popups. Both sims: start paused, pause visible only on canvas hover, restart
-leaves the run paused, and fast-forward cycles 1× → 3× → 8×. **Simulations 1
-and 2 open at 3×, Project 03 opens at 8×** (`let speed = N` plus the matching
+leaves the run paused, and fast-forward cycles 1× → 3× → 8×. **All three open
+at 3×** — Project 03 opened at 8× while a run was 10,000 steps and was brought
+into line with the others when the horizon dropped to 500, where 3× is ~37s end
+to end (`let speed = N` plus the matching
 `setSpeed(N)` at wire-up — both are needed, since the initial value stands if
 the button is missing). The archived `norms-sim.js` still opens at 8×; it is
 not on the page, so nothing was decided about it either way.

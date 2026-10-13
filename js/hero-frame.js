@@ -1,4 +1,4 @@
-// Hero photo — tiny blob builders laying the picture frame brick by brick.
+// Contact photo — tiny blob builders laying the picture frame brick by brick.
 //
 // Autoplaying, no controls, no sim/scene split, like js/leader-emergence.js
 // and js/eaten-metric.js. Plays exactly once, the first time the photo
