@@ -1014,6 +1014,25 @@ table.teach td.instructor a:focus-visible {
    "not filled in" rather than as a name. Unused now that every row has one,
    kept for the next row added before its instructor is known. */
 table.teach td.instructor .tbd { color: var(--text-muted); opacity: 0.6; }
+/* Teaching material linked beside a course name (e.g. a tutorial's slide deck).
+   Smaller, regular weight and muted, so the bold course name stays the heading;
+   same restrained underline as the instructor names, colour only on hover. */
+table.teach td.course .course-link {
+  margin-left: 10px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  white-space: nowrap;
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text-muted) 55%, transparent);
+  text-underline-offset: 3px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+table.teach td.course .course-link:hover,
+table.teach td.course .course-link:focus-visible {
+  color: var(--primary);
+  text-decoration-color: var(--primary);
+}
 
 /* A placeholder line under each course row, for a short description to be
    filled in later. Grouped visually with the row above it: the divider moves
