@@ -1,4 +1,4 @@
-// A porcelain factory with an uncertain purpose. Native WebGL, local assets only.
+// A satin-enamel miniature factory with an uncertain purpose. Native WebGL, local assets only.
 // Deterministic machines and little workers share a clock, not a simulation.
 (function () {
   const host = document.querySelector('.kinetic-sculpture');
@@ -13,6 +13,7 @@
     uniform mat4 model, viewProjection, lightProjection;
     uniform mat3 normalMatrix;
     uniform vec3 suitPose;
+    uniform float rounding;
     uniform mat4 leftUpper, leftLower, leftHand, rightUpper, rightLower, rightHand;
     varying vec3 N, P, localP;
     varying vec4 shadowPosition;
@@ -20,6 +21,10 @@
       vec3 p = position;
       localP = position;
       vec3 n = normal;
+      if (rounding > 0.0) {
+        p = mix(p, normalize(p), rounding);
+        n = normalize(mix(n, normalize(p), rounding));
+      }
       if (skin.x > 0.0) {
         mat4 upper = skin.z < 0.0 ? leftUpper : rightUpper;
         mat4 lower = skin.z < 0.0 ? leftLower : rightLower;
@@ -73,11 +78,11 @@
       vec3 uv = shadowPosition.xyz / shadowPosition.w * .5 + .5;
       float shadow = 0.0;
       float bias = max(.00065, .0018 * (1.0 - dot(n, l)));
-      for (int x=-1; x<=1; x++) for (int y=-1; y<=1; y++) {
-        float d = depth(texture2D(shadowMap, uv.xy + vec2(float(x), float(y)) * .00065));
+      for (int x=-2; x<=2; x++) for (int y=-2; y<=2; y++) {
+        float d = depth(texture2D(shadowMap, uv.xy + vec2(float(x), float(y)) * .0015));
         shadow += uv.z - bias > d ? 0.0 : 1.0;
       }
-      shadow /= 9.0;
+      shadow /= 25.0;
       if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) shadow = 1.0;
       if (ground > .5) {
         // A transparent shadow catcher lets CSS own the background in both themes.
@@ -87,7 +92,10 @@
       }
       float diffuse = max(dot(n, l), 0.0);
       vec3 halfVector = normalize(l + normalize(eye - P));
-      float specular = pow(max(dot(n, halfVector), 0.0), gloss) * .26 * shadow;
+      // Broad studio reflections give enamel a soft sheen rather than plastic glare.
+      float highlight = max(dot(n, halfVector), 0.0);
+      float specular = (pow(highlight, max(12.0, gloss * .65)) * .16
+        + pow(highlight, 9.0) * .055) * shadow;
       vec3 material = color;
       if (suit > .5) {
         // Subtle woven cuffs and boot soles are part of the continuous surface.
@@ -95,11 +103,17 @@
         float sole = 1.0 - smoothstep(-.025, -.016, localP.y);
         material = mix(material, vec3(.65, .73, .77), max(cuff * .7, sole));
       }
+      // Very fine moulded grain, kept below the contrast of the form itself.
+      float grain = fract(sin(dot(P, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+      material *= .992 + grain * .016;
       vec3 base = pow(material, vec3(2.2));
-      vec3 ambient = vec3(.40, .36, .35) + max(n.y, 0.0) * .12;
-      vec3 lit = base * (ambient + diffuse * shadow * .78) + specular;
-      // A neutral studio bounce beneath the porcelain.
-      lit += base * vec3(.075, .075, .08) * max(-n.y, 0.0);
+      float sky = n.y * .5 + .5;
+      vec3 ambient = mix(vec3(.18, .22, .28), vec3(.48, .54, .60), sky);
+      // Shadows also dim ambient light: seams and undersides no longer look luminous.
+      ambient *= mix(.60, 1.0, shadow);
+      vec3 lit = base * (ambient + vec3(1.0, .87, .74) * diffuse * shadow * .85)
+        + vec3(1.0, .94, .87) * specular;
+      lit += base * vec3(.055, .075, .095) * max(-n.y, 0.0);
       gl_FragColor = vec4(pow(lit, vec3(1.0 / 2.2)), 1.0);
     }`;
   const depthFragment = `
@@ -120,7 +134,7 @@
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw Error(gl.getProgramInfoLog(p));
     const uniforms = {};
-    ['model', 'viewProjection', 'lightProjection', 'normalMatrix', 'color', 'eye', 'gloss', 'ground', 'shadowMap', 'glass', 'suitPose', 'suit', 'leftUpper', 'leftLower', 'leftHand', 'rightUpper', 'rightLower', 'rightHand'].forEach(k => uniforms[k] = gl.getUniformLocation(p, k));
+    ['model', 'viewProjection', 'lightProjection', 'normalMatrix', 'color', 'eye', 'gloss', 'ground', 'shadowMap', 'glass', 'suitPose', 'suit', 'rounding', 'leftUpper', 'leftLower', 'leftHand', 'rightUpper', 'rightLower', 'rightHand'].forEach(k => uniforms[k] = gl.getUniformLocation(p, k));
     return { p, uniforms, position: gl.getAttribLocation(p, 'position'), normal: gl.getAttribLocation(p, 'normal'), skin: gl.getAttribLocation(p, 'skin') };
   }
 
@@ -185,30 +199,43 @@
     },48,profile.length-1);
   }
   const floor = mesh((u,v)=>[(u-.5)*200,0,(v-.5)*200,0,1,0],1,1);
-  // Shared low-poly primitives keep the larger scene economical to draw.
-  const cube=(()=>{
-    const data=[];
-    const faces=[
-      [[1,0,0],[.5,-.5,-.5],[.5,.5,-.5],[.5,.5,.5],[.5,-.5,.5]],
-      [[-1,0,0],[-.5,-.5,.5],[-.5,.5,.5],[-.5,.5,-.5],[-.5,-.5,-.5]],
-      [[0,1,0],[-.5,.5,-.5],[-.5,.5,.5],[.5,.5,.5],[.5,.5,-.5]],
-      [[0,-1,0],[-.5,-.5,.5],[-.5,-.5,-.5],[.5,-.5,-.5],[.5,-.5,.5]],
-      [[0,0,1],[-.5,-.5,.5],[.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5]],
-      [[0,0,-1],[.5,-.5,-.5],[-.5,-.5,-.5],[-.5,.5,-.5],[.5,.5,-.5]]
-    ];
-    faces.forEach(([n,...v])=>[0,1,2,0,2,3].forEach(i=>data.push(...v[i],...n)));
+  const cylinder=puck(1,1,.035), hoop=torus(1,.095), thinHoop=torus(1,.035);
+  const white=[.89,.94,.97], blue=[.30,.57,.73], blueDark=[.20,.36,.48];
+  const gold=[1.0,.66,.43], ink=[.14,.24,.32], muted=[.64,.77,.83], red=[.91,.48,.32];
+  // Dimension-specific rounded boxes keep bevels the same physical size even
+  // on long rails. Scaling a single rounded cube would stretch its corners.
+  const roundedBoxes=new Map();
+  function roundedBox(w,h,d) {
+    const key=[w,h,d].join(',');
+    if(roundedBoxes.has(key))return roundedBoxes.get(key);
+    const half=[w/2,h/2,d/2], r=Math.min(.065,Math.min(w,h,d)*.22);
+    const inner=half.map(v=>v-r), data=[];
+    for(let axis=0;axis<3;axis++)for(const sign of [-1,1]) {
+      const u=(axis+1)%3,v=(axis+2)%3;
+      // Place samples at both sides of each bevel as well as within its arc.
+      const samples=i=>[-half[i],-half[i]+r*.3,-half[i]+r,
+        half[i]-r,half[i]-r*.3,half[i]];
+      const us=samples(u),vs=samples(v);
+      const point=(a,b)=>{
+        const q=[0,0,0];q[axis]=sign*half[axis];q[u]=us[a];q[v]=vs[b];
+        const core=q.map((x,i)=>Math.max(-inner[i],Math.min(inner[i],x)));
+        const n=unit(sub(q,core));
+        return [...core.map((x,i)=>x+r*n[i]),...n];
+      };
+      for(let a=0;a<5;a++)for(let b=0;b<5;b++) {
+        const corners=[[a,b],[a+1,b],[a+1,b+1],[a,b+1]];
+        (sign>0?[0,1,2,0,2,3]:[0,2,1,0,3,2]).forEach(i=>data.push(...point(...corners[i])));
+      }
+    }
     const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);
-    return {buffer,count:data.length/6};
-  })();
-  const cylinder=puck(1,1,.035), hoop=torus(1,.095), thinHoop=torus(1,.035);
-  const white=[.94,.95,.93], blue=[.15,.49,.74], blueDark=[.13,.24,.31];
-  const gold=[.94,.64,.29], ink=[.14,.21,.25], muted=[.75,.81,.81], red=[.83,.38,.29];
+    const result={buffer,count:data.length/6};roundedBoxes.set(key,result);return result;
+  }
   // Factory X is horizontal in the default view; Z runs into the workshop.
   const factoryRoot=rotate('y',Math.atan2(5.2,7.7));
   let objects=[];
   const add=(mesh,model,color=white,gloss=38,extra={})=>objects.push({mesh,model:chain(factoryRoot,model),color,gloss,...extra});
-  const box=(x,y,z,w,h,d,color=white)=>add(cube,chain(move(x,y,z),scale(w,h,d)),color);
+  const box=(x,y,z,w,h,d,color=white)=>add(roundedBox(w,h,d),move(x,y,z),color,38,{bounds:{lo:[x-w/2,y-h/2,z-d/2],hi:[x+w/2,y+h/2,z+d/2]}});
   const ball=(x,y,z,r,color=white)=>add(sphere,chain(move(x,y,z),scale(r)),color);
   const drum=(x,y,z,r,h,color=white)=>add(cylinder,chain(move(x,y,z),scale(r,h,r)),color);
   function pipe(a,b,r=.07,color=white) {
@@ -233,48 +260,57 @@
   function buildFactory() {
     add(floor,I(),white,8);
     // Main processor: a squat housing, inspection window, hopper and exhaust.
-    box(3.65,.12,-.8,2.1,.24,1.8);
-    box(3.65,.88,-.8,1.65,1.38,1.45);
-    box(3.65,.87,-.055,1.23,.95,.035,blueDark);
-    ring(3.65,.95,.01,.40);
-    box(3.65,1.63,-.8,1.85,.14,1.64);
+    box(3.65,.12,-.8,1.95,.24,1.50);
+    box(2.91,.88,-.8,.17,1.38,1.45,gold);
+    box(3.65,.88,-1.46,1.65,1.38,.13,gold);
+    box(4.39,1.20,-.8,.17,.74,1.45,gold);
+    box(4.39,.32,-.8,.17,.25,1.45,gold);
+    for(const x of [3.02,4.28])box(x,.88,-.055,.40,1.38,.10,gold);
+    box(3.65,1.29,-.055,.86,.56,.10,gold);
+    box(3.65,.25,-.055,.86,.13,.10,gold);
+    box(3.65,.65,-1.1,1.10,.74,.035,blueDark);
+    ring(3.65,.65,.02,.30);
+    box(3.65,1.63,-.8,1.85,.14,1.64,white);
     drum(3.65,1.70,-.8,.57,.18,muted);
     add(sphere,chain(move(3.65,1.88,-.8),scale(.56,.26,.56)));
     drum(3.65,1.9,-.8,.29,.53);
     drum(3.65,2.40,-.8,.35,.10,gold);
     plumbing([[4.30,1.3,-1.1],[4.75,1.3,-1.1],[4.75,2.65,-1.1],[4.40,2.65,-1.1]],.095);
     for(let i=0;i<5;i++)box(4.50,.85+i*.12,-.60,.05,.045,.55,muted);
+    // Panel trim, recessed vents and fasteners make the housing feel manufactured.
+    for(const x of [3.00,4.30])box(x,.88,-.025,.035,1.04,.05,white);
+    for(const y of [.36,1.40])box(3.65,y,-.025,1.34,.035,.05,white);
+    for(let i=0;i<4;i++)box(3.16+i*.14,.34,-.015,.075,.055,.025,blueDark);
+    for(const x of [3.0,4.3])for(const y of [.37,1.39])ball(x,y,.007,.023,muted);
     // Three indicator lamps and a lever invite the operator's endless inspection.
     box(4.25,.50,.065,.35,.22,.10,blueDark);
     for(let i=0;i<3;i++)ball(4.14+i*.10,.52,.13,.03,i===1?blue:gold);
 
     // Conveyor, with real rollers, feet, guard rails, and a connected press.
-    box(2.15,.46,1.25,5.0,.15,.92,blueDark);
-    for(const z of [.75,1.75])box(2.15,.52,z,5.2,.19,.09);
-    for(const x of [-.20,1.3,3.1,4.5]) {
-      for(const z of [.85,1.65])box(x,.23,z,.10,.46,.10);
+    box(1.575,.30,1.25,4.15,.15,.92,blueDark);
+    for(const z of [.75,1.75])box(1.575,.36,z,4.25,.19,.09);
+    for(const x of [-.20,1.3,3.1]) {
+      for(const z of [.85,1.65])box(x,.15,z,.10,.30,.10);
     }
-    for(let i=0;i<21;i++)pipe([-.27+i*.24,.57,.82],[-.27+i*.24,.57,1.68],.055,muted);
-    for(const x of [1.20,2.55]) {
-      box(x,1.37,1.27,.17,1.85,.25);
-      box(x,.50,1.27,.34,.12,.43);
+    for(let i=0;i<17;i++)pipe([-.27+i*.24,.41,.82],[-.27+i*.24,.41,1.68],.055,muted);
+    // Four grounded columns sit outside the belt, leaving the press visible.
+    for(const x of [1.20,2.55])for(const z of [.60,1.95]) {
+      box(x,1.17,z,.14,2.15,.14,blue);
+      box(x,.045,z,.30,.09,.28);
     }
-    box(1.875,2.28,1.27,1.77,.23,.42);
+    for(const z of [.60,1.95])box(1.875,2.28,z,1.77,.23,.20,gold);
+    for(const x of [1.20,2.55])box(x,2.28,1.27,.20,.23,1.55,gold);
+    box(1.875,2.28,1.27,1.77,.23,.40,gold);
     drum(1.875,2.39,1.27,.23,.24,blue);
     pipe([1.875,2.26,1.27],[1.875,1.38,1.27],.065,gold);
 
     // Silo and a climbing pipe bridge, visibly feeding the main processor.
     drum(.80,.04,-1.20,.61,.16);
-    drum(.80,.20,-1.20,.46,1.50);
+    drum(.80,.20,-1.20,.46,1.50,blue);
     add(sphere,chain(move(.80,1.70,-1.20),scale(.46,.24,.46)));
     for(const y of [.45,1.45])ring(.80,y,-1.20,.47,muted,Math.PI/2);
     plumbing([[.80,1.82,-1.20],[.80,2.62,-1.20],[2.65,2.62,-1.20],[2.65,1.85,-1.20],[3.25,1.85,-1.20]],.10);
     ring(1.48,2.63,-1.20,.17,blue,Math.PI/2);
-    // Ladder and catwalk.
-    for(const x of [.15,.55])pipe([x,.04,-.37],[x,1.95,-.72],.035,blueDark);
-    for(let i=0;i<7;i++)pipe([.15,.20+i*.25,-.40-i*.045],[.55,.20+i*.25,-.40-i*.045],.028);
-    box(.42,1.95,-.80,1.05,.09,.55);
-
     // Quiet peripheral infrastructure reaches behind the text, almost like a watermark.
     plumbing([[-6,.10,3.15],[-3.9,.10,3.15],[-3.9,.10,-2.6],[-.6,.10,-2.6],[-.6,1.3,-2.6],[.8,1.3,-2.6],[.8,1.3,-1.5]],.095);
     plumbing([[-6,.18,-2.9],[-3.5,.18,-2.9],[-3.5,2.8,-2.9],[-1.1,2.8,-2.9],[-1.1,.35,-2.9]],.09);
@@ -282,15 +318,34 @@
     drum(-4.55,.22,-1.5,.43,1.25);
     add(sphere,chain(move(-4.55,1.47,-1.5),scale(.43,.21,.43)));
     ring(-3.9,.42,2.95,.24,blue);
-    box(-2.5,.16,2.7,1.0,.32,.65);
-    // A returning belt at the rear suggests the process never quite finishes.
-    box(1.7,.28,-2.55,7.7,.13,.44,muted);
-    for(let i=0;i<13;i++)box(-1.85+i*.6,.12,-2.55,.06,.24,.32);
-    // Output chute and a bin of identical-looking things.
-    plumbing([[4.25,.7,-.3],[5.0,.7,-.3],[5.0,.23,.2]],.14);
-    box(5,.15,.65,.67,.30,.70);
-    box(5,.31,.65,.53,.025,.56,blueDark);
-    for(let i=0;i<4;i++)ball(4.83+(i%2)*.25,.39,.5+Math.floor(i/2)*.25,.12,gold);
+    // Narrow docking surfaces leave space for boots and reaching hands.
+    box(-.85,.14,1.325,.07,.28,.07,blueDark);
+    box(-.85,.285,1.325,.52,.03,.35,muted);
+    box(.05,.425,1.55,.48,.08,.50,muted);
+    box(3.45,.425,1.55,.48,.08,.70,muted);
+    // The sphere exits a side aperture onto a supported, open L-shaped chute.
+    box(5.10,.405,-.60,1.42,.10,.40,muted);
+    for(const z of [-.84,-.36])box(5.10,.54,z,1.42,.18,.045,white);
+    box(5.70,.405,0,.40,.10,1.30,muted);
+    for(const x of [5.47,5.93])box(x,.54,0,.045,.18,1.04,white);
+    // Inspection, sorting and remoulding stations.
+    drum(5.70,.04,2.55,.055,.36,blueDark);
+    drum(5.70,.40,2.55,.10,.055,muted);
+    box(5.30,.21,3.20,.035,.42,.06,blueDark);
+    box(5.175,.405,3.20,.25,.03,.06,muted);
+    box(5.05,.435,3.20,.22,.03,.12,muted);
+    for(const x of [-.975,-.325])box(x,.30,3.05,.10,.60,.65,blue);
+    box(-.65,.30,2.76,.75,.60,.08,blue);
+    box(-.65,.16,3.35,.55,.30,.06,blue);
+    box(-.65,.50,2.85,.55,.40,.04,blueDark);
+    box(-.65,.42,3.05,.55,.06,.50,muted);
+    box(-.65,.42,3.43,.28,.06,.16,muted);
+    box(3.65,.43,-.30,.80,.05,.70,muted);
+    box(3.65,.5295,-.025,.44,.05,.32,muted);
+    // Controls sit within arm's reach, rather than above the workers' helmets.
+    box(.90,.26,2.08,.18,.52,.12,blueDark);
+    box(4.80,.26,-1.55,.18,.52,.12,blueDark);
+
   }
   buildFactory();
   const fixedObjects=objects.slice();
@@ -400,7 +455,7 @@
     const p=n.map(power), normal=unit(p.map(x=>Math.sign(x)*Math.pow(Math.abs(x),2/.38-1)));
     return [...p,...normal];
   },32,24);
-  const parcelPosition=[0,.255,.205], parcelRadius=.11;
+  const parcelPosition=[0,.255,.205];
   function boneFrame(direction,front) {
     const y=unit(direction), z=unit(front.map((v,i)=>v-y[i]*dot(front,y))), x=cross(y,z);
     return [...x,0,...y,0,...z,0,0,0,0,1];
@@ -410,7 +465,7 @@
     const inverse=[rest[0],rest[4],rest[8],0,rest[1],rest[5],rest[9],0,rest[2],rest[6],rest[10],0,0,0,0,1];
     return chain(posed,inverse);
   }
-  function armBones(s,step,carrying,shrug) {
+  function armBones(s,step,carrying,shrug,grip=parcelPosition) {
     const shoulder=[s*.108,.319,0], elbow=[s*.176,.265,0], palm=[s*.254,.137,.022];
     const wrist=[s*.231,.194,.008];
     // Relaxed palms face the thighs: fingers hang down, thumbs face forward.
@@ -437,7 +492,7 @@
     const offset=sub(palm,wrist);
     const rotatedOffset=[0,1,2].map(i=>handRotation[i]*offset[0]+handRotation[i+4]*offset[1]+handRotation[i+8]*offset[2]);
     const gesture=ease(shrug);
-    const goal=carrying?[s*.130,.235,.180].map((v,i)=>v-rotatedOffset[i]):restingWrist.map((v,i)=>v+([s*.240,.265,.075][i]-v)*gesture);
+    const goal=carrying?[s*.130,grip[1],grip[2]].map((v,i)=>v-rotatedOffset[i]):restingWrist.map((v,i)=>v+([s*.240,.265,.075][i]-v)*gesture);
     // All poses share this shoulder anchor; only rotations and wrist targets move.
     const delta=sub(goal,restingShoulder), direction=unit(delta);
     const distance=Math.min(a+b-.001,Math.max(Math.abs(a-b)+.001,Math.hypot(...delta)));
@@ -477,18 +532,18 @@
     const [tx,ty,tz]=m.slice(12,15);
     return [x,y,z,w, .5*(tx*w+ty*z-tz*y),.5*(-tx*z+ty*w+tz*x),.5*(tx*y-ty*x+tz*w),-.5*(tx*x+ty*y+tz*z), 0,0,0,0,0,0,0,0];
   }
-  function astronaut(x,z,t,{y=0,heading=0,walking=false,carrying=false,shrug=0,look=0}={}) {
-    const step=walking?Math.sin(t*9):0, bob=walking?Math.abs(step)*.012:Math.sin(t*2)*.004;
-    const root=chain(move(x,y+.055+bob,z),rotate('y',heading));
+  function astronaut(x,z,t,{y=0,heading=0,walking=false,carrying=false,shrug=0,look=0,cargo=null,badge=blue,grip=parcelPosition,walkPhase=t,walkAmount=1}={}) {
+    const step=walking?Math.sin(walkPhase*10)*walkAmount:0, bob=0;
+    const root=chain(move(x,y+.055+bob,z),rotate('y',heading),scale(1.25));
     const part=(geometry,position,size,color=white,gloss=24)=>add(geometry,chain(root,move(...position),scale(...size)),color,gloss);
-    add(suitMesh,root,white,18,{pose:[step,0,0],bones:[...armBones(-1,step,carrying,shrug),...armBones(1,step,carrying,shrug)].map(packBone)});
+    add(suitMesh,root,white,18,{pose:[step,0,0],bones:[...armBones(-1,step,carrying,shrug,grip),...armBones(1,step,carrying,shrug,grip)].map(packBone)});
     part(equipment,[0,.273,-.124],[.099,.116,.042],suitTrim);
     part(equipment,[0,.278,-.151],[.086,.101,.030]);
     // A compact panel follows the suit's front rather than floating above it.
     part(equipment,[0,.268,.100],[.076,.060,.016],suitTrim);
     part(equipment,[0,.272,.115],[.066,.050,.009]);
     part(sphere,[-.032,.281,.127],[.018,.018,.008],blueDark);
-    part(equipment,[.025,.287,.127],[.018,.009,.004],blue);
+    part(equipment,[.025,.287,.127],[.018,.009,.004],badge);
     part(sphere,[.030,.249,.127],[.009,.009,.005],gold);
     add(thinHoop,chain(root,move(0,.375,0),rotate('x',Math.PI/2),scale(.146,.123,.44)),suitTrim);
     // Smaller head movements keep the collar connected during a glance.
@@ -510,59 +565,218 @@
     face(sphere,[0,-.056,.106],[.015,.004,.003],[.56,.31,.25],12);
     face(helmetGlass,[0,0,0],[.233,.224,.219],[.7,.86,.96],100);
     objects[objects.length-1].glass=true;
-    if(carrying)part(sphere,parcelPosition,[parcelRadius,parcelRadius,parcelRadius],blue,38);
+    if(cargo) {
+      const geometry=cargo==='cube'?roundedBox(.22,.22,.22):cargo==='puck'?cylinder:sphere;
+      const size=cargo==='cube'?[1,1,1]:cargo==='puck'?[.13,.08,.13]:[.13,.13,.13];
+      part(geometry,parcelPosition,size,blue,38);
+    }
+    // World-space grip position lets loading/unloading meet the worker's hands.
+    return [x+Math.sin(heading)*grip[2]*1.25,y+.055+bob+grip[1]*1.25,z+Math.cos(heading)*grip[2]*1.25];
   }
 
+  // A new batch starts every 20 seconds; three stages work concurrently.
+  // Tracks share one clock and explicitly turn before walking. Products use
+  // the same sampled hands as the rig, never independent courier trajectories.
+  const batchSeconds=20, warmup=60;
+  const between=(v,a,b)=>v>=a&&v<b;
+  const mod=(v,n)=>((v%n)+n)%n;
+  const mixPoint=(a,b,u)=>a.map((v,i)=>v+(b[i]-v)*ease(u));
+  const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
+  const carryGrip=[0,.44,.16];
+  const gripAt=(y,reach=.25)=>[0,(y-.055)/1.25,reach/1.25];
+  function track(home,heading) {
+    let p=home,h=heading;
+    const spans=[];
+    const api={
+      turn(start,end,target) {
+        spans.push({start,end,a:p,b:p,h0:h,h1:h+angleDelta(h,target)});
+        h+=angleDelta(h,target);return api;
+      },
+      walk(start,end,target) {
+        const direction=Math.atan2(target[0]-p[0],target[1]-p[1]);
+        const turnTime=Math.abs(angleDelta(h,direction))>.01?.35:0;
+        if(turnTime)api.turn(start,start+turnTime,direction);
+        spans.push({start:start+turnTime,end,a:p,b:target,h0:h,h1:h});p=target;return api;
+      },
+      sample(q) {
+        let pos=home,yaw=heading,distance=0;
+        for(const v of spans) {
+          if(q<v.start)break;
+          const u=Math.min(1,(q-v.start)/(v.end-v.start));
+          pos=mixPoint(v.a,v.b,u);yaw=v.h0+(v.h1-v.h0)*ease(u);
+          const length=Math.hypot(v.b[0]-v.a[0],v.b[1]-v.a[1]);
+          distance+=length*ease(u);
+          if(q<v.end)return {p:pos,heading:yaw,walking:length>0,walkPhase:distance,turning:Math.abs(v.h1-v.h0)>.01,
+            speed:length*6*u*(1-u)/(v.end-v.start),direction:length?Math.atan2(v.b[0]-v.a[0],v.b[1]-v.a[1]):yaw};
+        }
+        return {p:pos,heading:yaw,walking:false,walkPhase:distance,speed:0,direction:yaw};
+      }
+    };return api;
+  }
+  const loaderTrack=track([-.85,1.70],Math.PI)
+    .walk(1.5,2.5,[-.85,2.05]).walk(2.5,4.1,[.05,2.05])
+    .walk(4.1,4.85,[.05,2.00])
+    .walk(6.3,7,[.05,2.05]).walk(7,8.5,[-.85,2.05])
+    .walk(8.5,9.5,[-.85,1.70]);
+  const transferTrack=track([3.45,2.10],Math.PI)
+    .walk(17.5,19.5,[4.20,2.10]).walk(19.5,22,[4.95,.40])
+    .walk(22,24,[3.65,.40]).walk(24,24.9,[3.65,.35])
+    .walk(27.3,28.2,[3.65,.40]).walk(28.2,30,[4.95,.40])
+    .walk(30,32.5,[4.20,2.10]).walk(32.5,34.5,[3.45,2.10]).turn(34.5,34.85,Math.PI);
+  const inspectorTrack=track([5.70,.85],Math.PI)
+    .walk(35.5,37.8,[5.70,2.30]).turn(37.8,38.1,0)
+    .walk(40.8,42,[5.05,2.30]).walk(42,43.4,[5.05,2.95]).turn(43.4,43.75,0)
+    .walk(45,46,[5.70,2.95]).walk(46,47,[6.35,3.20]).walk(47,49,[6.35,.85])
+    .walk(49,50.2,[5.70,.85]).turn(50.2,50.55,Math.PI);
+  const dispatchTrack=track([3.47,3.80],Math.PI/2)
+    .walk(40,41,[3.47,4.45]).walk(41,43,[5.05,4.45])
+    .walk(43,44.5,[5.05,3.45]).turn(44.5,44.85,Math.PI)
+    .walk(46,46.8,[5.60,3.45]).walk(46.8,47.5,[5.60,2.90])
+    .walk(47.5,48.7,[3.64,2.90]).walk(48.7,49.6,[3.64,3.80]).turn(49.6,49.95,Math.PI/2)
+    .walk(50.6,51.3,[3.47,3.80]).turn(51.3,51.65,Math.PI/2)
+    .walk(51.65,53.7,[6.72,3.80])
+    .walk(54,55.5,[7.88,3.80]).turn(55.5,56,-Math.PI/2)
+    .walk(56,59.5,[4.63,3.80]).walk(59.5,60.4,[4.55,3.30])
+    .walk(60.4,61.8,[3.47,3.30]).walk(61.8,62.8,[3.47,3.80]).turn(62.8,63.15,Math.PI/2);
+  const recyclerTrack=track([-.65,3.70],Math.PI)
+    .walk(40,42,[5.05,4.55]).walk(42,44.5,[5.05,3.45]).turn(44.5,44.85,Math.PI)
+    .walk(46,47.2,[5.05,4.55]).walk(47.2,51,[-.65,4.55])
+    .walk(51,52.5,[-.65,3.70]).turn(52.5,52.85,Math.PI)
+    .walk(56.5,58,[-2.15,3.70]).walk(58,61,[-2.15,.95])
+    .walk(61,62.2,[-.85,.95]).turn(62.2,62.55,0)
+    .walk(64,65,[-2.15,.95]).walk(65,68,[-2.15,3.70])
+    .walk(68,69.5,[-.65,3.70]).turn(69.5,69.85,Math.PI);
+  const later=(path,delay)=>({sample:q=>path.sample(q-delay)});
+  function gripKeys(q,keys) {
+    let result=keys[0][1];
+    for(let i=1;i<keys.length;i++) {
+      if(q<keys[i][0])return mixPoint(result,keys[i][1],(q-keys[i-1][0])/(keys[i][0]-keys[i-1][0]));
+      result=keys[i][1];
+    }return result;
+  }
+  function handOf(a) {
+    return [a.p[0]+Math.sin(a.heading)*a.grip[2]*1.25,.055+a.grip[1]*1.25,a.p[1]+Math.cos(a.heading)*a.grip[2]*1.25];
+  }
+  function worker(name,path,q,grip,holding,badge) {
+    const a={name,q,...path.sample(q),grip,holding,badge};a.hand=handOf(a);return a;
+  }
+  function production(t) {
+    const clock=Math.max(0,t)+warmup;
+    return {batch:Math.floor(clock/batchSeconds),phase:mod(clock,batchSeconds),clock};
+  }
+  function sampleFactory(t) {
+    const {clock}=production(t), local=start=>start+mod(clock-start,20);
+    const l=local(0),tr=local(16),ins=local(34),d=42+mod(clock-42,40),r=42+mod(clock-62,40);
+    const loader=worker('loader',loaderTrack,l,gripKeys(l,[[0,gripAt(.43)],[1,gripAt(.43)],[1.5,carryGrip],[4.85,carryGrip],[5.6,gripAt(.595)],[6.1,gripAt(.595)],[6.3,carryGrip]]),between(l,0,6.3),gold);
+    const transfer=worker('transfer',transferTrack,tr,gripKeys(tr,[[16,gripAt(.5105,.25)],[16.6,gripAt(.5105,.25)],[17.5,carryGrip],[24.9,carryGrip],[25.8,gripAt(.60,.25)],[26.6,gripAt(.60,.25)],[27.3,carryGrip]]),between(tr,16,27.3),muted);
+    const inspector=worker('inspector',inspectorTrack,ins,gripKeys(ins,[[34,gripAt(.60)],[34.8,gripAt(.60)],[35.5,carryGrip],[37.8,carryGrip],[38.5,gripAt(.60)],[40,gripAt(.60)],[40.8,carryGrip],[43.75,carryGrip],[44.5,gripAt(.60)],[45,carryGrip]]),between(ins,34,38.5)||between(ins,40,45),blue);
+    const dispatcher=worker('dispatch',later(dispatchTrack,2),d,gripKeys(d-2,[[43,carryGrip],[44.85,gripAt(.60)],[45.5,gripAt(.60)],[46,carryGrip],[49.95,carryGrip],[50.4,gripAt(.565)],[50.6,gripAt(.565)],[51.65,gripAt(.52,.25)],[54,gripAt(.52,.25)],[56.5,gripAt(.52,.25)],[61,gripAt(.52,.25)],[62,carryGrip]]),(between(d,46.85,52.6)||between(d,53.65,55.7)||between(d,58.35,61.5)),[.35,.78,.53]);
+    const recycler=worker('recycler',later(recyclerTrack,2),r,gripKeys(r-2,[[40,carryGrip],[44.85,gripAt(.60)],[45.5,gripAt(.60)],[46,carryGrip],[52.85,carryGrip],[53.5,gripAt(.595)],[55,gripAt(.595)],[56,gripAt(.58)],[56.5,carryGrip],[62.55,carryGrip],[63.2,gripAt(.43)],[63.8,gripAt(.43)],[64,carryGrip]]),between(r,46.85,56)||between(r,57,66),red);
+    const stationary=(name,p,heading,q,active,badge)=>worker(name,track(p,heading),q,gripAt(.55),active,badge);
+    const agents=[loader,stationary('press',[.90,2.33],Math.PI,local(10),between(local(10),10,16),red),transfer,
+      stationary('chamber',[4.80,-1.80],0,local(28),between(local(28),28,36),gold),inspector,dispatcher,recycler];
+    const goods=[];
+    const push=(id,kind,p,extra={})=>goods.push({id,kind,p,...extra});
+    const slide=(a,b,q,start,end)=>mixPoint(a,b,(q-start)/(end-start));
+    for(let id=Math.floor((clock-80)/20);id<=Math.floor(clock/20);id++) {
+      const q=clock-id*20,reject=mod(id,2)===1;
+      if(q<0||q>=80)continue;
+      if(q<1)push(id,'cube',slide([-.85,.43,1.45],loader.hand,q,0,1));
+      else if(q<5.6)push(id,'cube',loader.hand);
+      else if(q<6)push(id,'cube',[.05,.595,1.75]);
+      else if(q<7)push(id,'cube',slide([.05,.595,1.75],[.05,.595,1.25],q,6,7));
+      else if(q<10)push(id,'cube',slide([.05,.595,1.25],[1.875,.595,1.25],q,7,10));
+      else if(q<13) {
+        const flat=ease((q-11.2)/.9);push(id,'cube',[1.875,.465+.13*(1-flat*.65),1.25],{flat});
+      } else if(q<15)push(id,'cube',slide([1.875,.5105,1.25],[3.45,.5105,1.25],q,13,15),{flat:1});
+      else if(q<16)push(id,'cube',slide([3.45,.5105,1.25],[3.45,.5105,1.85],q,15,16),{flat:1});
+      else if(q<16.6)push(id,'cube',slide([3.45,.5105,1.85],transfer.hand,q,16,16.6),{flat:1});
+      else if(q<25.8)push(id,'cube',transfer.hand,{flat:1});
+      else if(q<26.6)push(id,'cube',slide([3.65,.60,.10],[3.65,.60,-.45],q,25.8,26.6),{flat:1});
+      else if(q<28)push(id,'cube',slide([3.65,.60,-.45],[3.65,.5005,-.45],q,26.6,27.2),{flat:1});
+      else if(q<32)push(id,'forming',[3.65,.455+.0455+.0995*ease((q-28.5)/3),-.45],{form:ease((q-28.5)/3),reject});
+      else if(q<32.6)push(id,'sphere',slide([3.65,.60,-.45],[4.6,.60,-.60],q,32,32.6),{reject});
+      else if(q<33.2)push(id,'sphere',slide([4.6,.60,-.60],[5.7,.60,-.60],q,32.6,33.2),{reject});
+      else if(q<34)push(id,'sphere',slide([5.7,.60,-.60],[5.7,.60,.60],q,33.2,34),{reject});
+      else if(q<34.8)push(id,'sphere',slide([5.7,.60,.60],inspector.hand,q,34,34.8),{reject});
+      else if(q<38.5)push(id,'sphere',inspector.hand,{reject});
+      else if(q<40)push(id,'sphere',[5.7,.60,2.55],{reject,spin:(q-38.5)*3});
+      else if(q<40.8)push(id,'sphere',inspector.hand,{reject});
+      else if(q<44.5)push(id,'sphere',inspector.hand,{reject});
+      else if(q<47.5)push(id,'sphere',slide([5.05,.60,3.2],reject?recycler.hand:dispatcher.hand,q,46.85,47.5),{reject});
+      else if(!reject) {
+        if(q<52.4)push(id,'sphere',dispatcher.hand);
+        else if(q<58)push(id,'sphere',[cartPosition(d)-.16,.565,3.80]);
+      } else {
+        if(q<55.5)push(id,'sphere',recycler.hand,{reject});
+        else if(q<56)push(id,'sphere',slide([-.65,.595,3.45],[-.65,.595,3.05],q,55.5,56),{reject});
+        else if(q<57) {const form=ease((q-56)/.8);push(id,'rework',[-.65,.595-.015*form,3.05],{form});}
+        else if(q<58)push(id,'cube',slide([-.65,.58,3.05],recycler.hand,q,57,58));
+        else if(q<65.2)push(id,'cube',recycler.hand);
+        else if(q<66)push(id,'cube',[-.85,.43,1.20]);
+        else push(id,'cube',slide([-.85,.43,1.20],[-.85,.43,1.45],q,66,67));
+      }
+    }
+    return {clock,agents,goods,pressQ:local(10),transferQ:tr,chamberQ:local(28),inspectorQ:ins,dispatchQ:d,recyclerQ:r};
+  }
+  function cartPosition(q) {
+    q-=2;
+    if(q<51.65)return 4.05;
+    if(q<53.7)return 4.05+3.25*ease((q-51.65)/(53.7-51.65));
+    if(q<56)return 7.30;
+    if(q<59.5)return 7.30-3.25*ease((q-56)/(59.5-56));
+    return 4.05;
+  }
+  const formingGeometry=mesh((u,v)=>{
+    const a=u*TAU,b=v*Math.PI,n=[Math.cos(a)*Math.sin(b),Math.cos(b),Math.sin(a)*Math.sin(b)];
+    const p=n.map(x=>Math.sign(x)*Math.pow(Math.abs(x),.18));
+    const normal=unit(p.map(x=>Math.sign(x)*Math.pow(Math.abs(x),2/.18-1)));
+    return [...p,...normal];
+  },36,24);
+  function item(g) {
+    if(g.kind==='rework') {
+      add(formingGeometry,chain(move(...g.p),scale(.11+.02*g.form,.145-.015*g.form,.175-.045*g.form)),blue,38,{rounding:1-g.form});return;
+    }
+    if(g.kind==='cube')add(roundedBox(.26,.26,.26),chain(move(...g.p),scale(1+(g.flat||0)*.30,1-(g.flat||0)*.65,1+(g.flat||0)*.30)),blue);
+    else if(g.kind==='forming')add(formingGeometry,chain(move(...g.p),scale(.169-.024*g.form,.0455+.0995*g.form,.169-.024*g.form)),blue,38,{rounding:g.form});
+    else add(sphere,chain(move(...g.p),rotate('y',g.spin||0),scale(g.reject?.11:.145,.145,g.reject?.175:.145)),blue);
+  }
+  function trolley(x,z) {
+    box(x,.38,z,.45,.08,.46);
+    for(const dx of [-.10,.10])for(const dz of [-.16,.16])
+      add(cylinder,chain(move(x+dx,.10,z+dz),rotate('x',Math.PI/2),scale(.085,.055,.085)),blueDark);
+    // Handles on both ends allow the worker to walk facing the return direction.
+    for(const dx of [-.10,.10])for(const dz of [-.16,.16])pipe([x+dx,.10,z+dz],[x+dx,.38,z+dz],.018,muted);
+    for(const side of [-1,1]) {
+      for(const dz of [-.19,.19])pipe([x+side*.33,.20,z+dz],[x+side*.33,.52,z+dz],.025);
+      pipe([x+side*.33,.52,z-.19],[x+side*.33,.52,z+.19],.025);
+    }
+  }
   function scene(t) {
     objects=fixedObjects.slice();
-    // Belt slats and parcels advance continuously. The press politely stamps nothing.
-    const belt=cycle(t,8);
-    for(let i=0;i<7;i++) {
-      const x=-.10+((belt+i/7)%1)*4.45;
-      const wobble=Math.sin(t*2+i)*.025;
-      add(cube,chain(move(x,.77,1.24),rotate('y',.12*Math.sin(i)),scale(.25,.28+wobble,.25)),i%3===0?gold:blue);
+    const state=sampleFactory(t),q=state.pressQ;
+    const approach=ease((q-10)/1.2),squeeze=ease((q-11.2)/.9),release=ease((q-12.2)/.8);
+    const bottom=1.68-(.955*approach+.169*squeeze)*(1-release);
+    box(1.875,bottom+.09,1.27,.74,.18,.60);
+    pipe([1.875,2.32,1.27],[1.875,bottom+.14,1.27],.070,gold);
+    ball(.90,.55,2.08,.042,between(q,10,13)?gold:muted);
+    // The front hatch is open for insertion; spheres leave through the side port.
+    const aperture=mod(state.clock-24,20);
+    const open=ease(aperture/.7)*(1-ease((aperture-3.8)/.7));
+    box(3.65,.65+open*.90,.10,.82,.70,.045,blueDark);
+    for(let i=0;i<4;i++)ball(4.80,.40+i*.055,-1.48,.020,state.chamberQ>=28+i&&state.chamberQ<34?gold:muted);
+    const inspectionBusy=between(state.inspectorQ,38.5,40);
+    const inspected=state.goods.find(g=>g.spin!==undefined);
+    ball(5.90,.46,2.55,.032,inspectionBusy?(inspected?.reject?red:[.35,.78,.53]):muted);
+    if(between(state.recyclerQ,56,57.5)) {
+      const contact=.74-.03*ease((state.recyclerQ-56)/.8);
+      const bottom=.82-(.82-contact)*ease((state.recyclerQ-56)/.2)*(1-ease((state.recyclerQ-57)/.5));
+      box(-.65,bottom+.06,3.05,.50,.12,.40);
+      ball(-.65,.52,3.47,.028,gold);
     }
-    const stamp=cycle(t,3.4);
-    const down=ease((stamp-.18)/.10)*(1-ease((stamp-.45)/.23));
-    box(1.875,1.77-down*.68,1.27,.74,.18,.60);
-    pipe([1.875,2.32,1.27],[1.875,1.82-down*.68,1.27],.070,gold);
-    // Quarter-turn sorter visible through the blue inspection port.
-    add(hoop,chain(move(3.65,.95,.07),rotate('z',quarter(t)),scale(.30)),gold);
-    for(let i=0;i<3;i++) {
-      const a=quarter(t)+i*TAU/3;
-      ball(3.65+Math.cos(a)*.24,.95+Math.sin(a)*.24,.11,.075,blue);
-    }
-    // The hopper launches a few pellets, which fall back into the same hopper.
-    for(let i=0;i<3;i++) {
-      const p=cycle(t,3,i*.6), arc=Math.sin(p*Math.PI);
-      ball(3.65+Math.sin(p*TAU)*.24,2.48+arc*.73,-.8+Math.cos(p*TAU)*.18,.065+arc*.025,i===1?gold:white);
-    }
-    // Two couriers: deliver a blue object, inspect the empty space, take it back.
-    for(let i=0;i<2;i++) {
-      const p=cycle(t,14,i*7), travel=ease((p% .5)/.34);
-      const outbound=p<.5, x=outbound?-.7+travel*4.9:4.2-travel*4.9;
-      const moving=(p% .5)<.34;
-      astronaut(x,2.45+i*.25,t+i,{heading:moving?(outbound?Math.PI/2:-Math.PI/2):.35,walking:moving,carrying:true,look:moving?0:Math.sin(t*3)});
-    }
-    // A wandering inspector stops, looks both ways, and raises its hands.
-    const p=cycle(t,17), progress=ease((p% .5)/.30), out=p<.5;
-    astronaut(out?-4.1+progress*3.5:-.6-progress*3.5,3.30,t,{heading:(p% .5)<.3?(out?Math.PI/2:-Math.PI/2):Math.sin(t)*.4,walking:(p% .5)<.3,shrug:(p% .5)>.34?(.5+.5*Math.sin(t*3)):0});
-    // A ladder-climber repeatedly goes up for a better look, then comes back down.
-    const climb=(.5-.5*Math.cos(t*.45))*1.4;
-    astronaut(.35,-.18-climb*.18,t,{y:climb,heading:Math.PI,walking:true});
-    // Operator watches the press; its shrug follows every unproductive stamp.
-    astronaut(2.8,1.96,t,{heading:-.3,shrug:down,look:Math.sin(t)});
-    // A pair tug the same wheeled trolley in opposite directions.
-    const cartX=3.9+Math.sin(t*.8)*.33;
-    box(cartX,.19,3.45,.64,.14,.46);
-    for(const x of [-.22,.22])for(const z of [-.19,.19]) {
-      add(cylinder,chain(move(cartX+x,.10,3.45+z),rotate('x',Math.PI/2),scale(.085,.055,.085)),blueDark);
-    }
-    ring(cartX,.47,3.45,.23,gold,Math.PI/2);
-    astronaut(cartX-.56,3.45,t,{heading:Math.PI/2,walking:true,shrug:.5});
-    astronaut(cartX+.56,3.45,t+.5,{heading:-Math.PI/2,walking:true,shrug:.5});
-    // The rear line quietly returns more parts into the workshop.
-    for(let i=0;i<6;i++)ball(-1.6+((t*.09+i/6)%1)*7.2,.47,-2.55,.115,i%2?white:gold);
+    trolley(cartPosition(state.dispatchQ),3.80);
+    for(const a of state.agents)astronaut(...a.p,t,{heading:a.heading,walking:a.walking,walkPhase:a.walkPhase,walkAmount:Math.min(1,a.speed/.4),carrying:a.holding,grip:a.grip,badge:a.badge});
+    for(const g of state.goods)item(g);
   }
   let main, depthPass, shadowBuffer, shadowTexture;
   try {
@@ -626,6 +840,7 @@
       }
       gl.uniformMatrix4fv(shader.uniforms.model,false,o.model);
       gl.uniform3fv(shader.uniforms.suitPose,o.pose||[0,0,0]);
+      gl.uniform1f(shader.uniforms.rounding,o.rounding||0);
       if(!shadow)gl.uniformMatrix3fv(shader.uniforms.normalMatrix,false,normals(o.model));
       gl.uniform3fv(shader.uniforms.color,o.color);
       gl.uniform1f(shader.uniforms.gloss,o.gloss);
@@ -804,5 +1019,5 @@
   updateButton(); render(0);
   host.classList.add('is-rendered'); button.hidden=false; resume();
   // Deterministic frames for visual review, without waiting through the loop.
-  window.kineticSculpture={render,quarter};
+  window.kineticSculpture={render,quarter,production,sample:sampleFactory,layout:fixedObjects.filter(o=>o.bounds).map(o=>o.bounds)};
 })();
